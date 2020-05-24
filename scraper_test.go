@@ -4,42 +4,38 @@ import "testing"
 
 //TestScrapeAH tests scrapeAH
 func TestScrapeAH(t *testing.T) {
-	expectedOutput := Recipe{
-		Title:     "Pasta pesto vegetarisch",
-		TotalTime: 15,
-		Tags:      []string{"snel", "vegetarish", "italians", "wat eten we vandaag", "koken", "5-ingrediënten"},
-		ImageURL:  "https://static.ah.nl/static/recepten/img_RAM_PRD123716_890x594_JPG.jpg",
-		URL:       "https://www.ah.nl/allerhande/recept/R-R1192908/pasta-pesto-vegetarisch",
+	expectedRecipe := AHRecipe{
+		Title:    "Pasta pesto vegetarisch",
+		Tags:     []string{"snel", "vegetarish", "italians", "wat eten we vandaag", "koken", "5-ingrediënten"},
+		ImageURL: "https://static.ah.nl/static/recepten/img_RAM_PRD123716_890x594_JPG.jpg",
+		URL:      "https://www.ah.nl/allerhande/recept/R-R1192908/pasta-pesto-vegetarisch",
 	}
 
 	//scrape recipe
-	output := scrapeAH(expectedOutput.URL)
+	recipe := AHRecipe{}
+	recipe.scrapeAH(expectedRecipe.URL)
 
-	if output.Title != expectedOutput.Title {
-		t.Errorf("Title is incorrect, got '%s', want '%s'", output.Title, expectedOutput.Title)
+	if recipe.Title != expectedRecipe.Title {
+		t.Errorf("Title is incorrect, got '%s', want '%s'", recipe.Title, expectedRecipe.Title)
 	}
 
-	if output.TotalTime != expectedOutput.TotalTime {
-		t.Errorf("TotalTime is incorrect, got '%d', want '%d'", output.TotalTime, expectedOutput.TotalTime)
+	if recipe.Ingredients == nil || len(recipe.Ingredients) == 0 {
+		t.Errorf("Ingredients are incorrect, got '%v', want a positive non nil value", recipe.Ingredients)
 	}
 
-	if output.Ingredients == nil || len(output.Ingredients) == 0 {
-		t.Errorf("Ingredients are incorrect, got '%v', want a positive non nil value", output.Ingredients)
+	if recipe.Instructions == nil || len(recipe.Instructions) == 0 {
+		t.Errorf("Instructions are incorrect, got '%v', want a positive non nil value", recipe.Instructions)
 	}
 
-	if output.Instructions == nil || len(output.Instructions) == 0 {
-		t.Errorf("Instructions are incorrect, got '%v', want a positive non nil value", output.Instructions)
+	if len(recipe.Tags) != len(expectedRecipe.Tags) {
+		t.Errorf("Tags are incorrect, got '%v', want '%v'", recipe.Tags, expectedRecipe.Tags)
 	}
 
-	if len(output.Tags) != len(expectedOutput.Tags) {
-		t.Errorf("Tags are incorrect, got '%v', want '%v'", output.Tags, expectedOutput.Tags)
+	if recipe.ImageURL != expectedRecipe.ImageURL {
+		t.Errorf("ImageURL is incorrect, got '%s', want '%s'", recipe.ImageURL, expectedRecipe.ImageURL)
 	}
 
-	if output.ImageURL != expectedOutput.ImageURL {
-		t.Errorf("ImageURL is incorrect, got '%s', want '%s'", output.ImageURL, expectedOutput.ImageURL)
-	}
-
-	if output.URL != expectedOutput.URL {
-		t.Errorf("URL is incorrect, got '%s', want '%s'", output.URL, expectedOutput.URL)
+	if recipe.URL != expectedRecipe.URL {
+		t.Errorf("URL is incorrect, got '%s', want '%s'", recipe.URL, expectedRecipe.URL)
 	}
 }
