@@ -62,8 +62,8 @@ type AHRecipes struct {
 	Recipes []AHRecipe `json:"recipes"`
 }
 
-//scrapeAH scrapes a recipe from Albert Heijn Allerhande website
-func (r *AHRecipe) scrapeAH(recipeURL string) {
+//ScrapeAH scrapes a recipe from Albert Heijn Allerhande website
+func (r *AHRecipe) ScrapeAH(recipeURL string) {
 	//get url
 	r.URL = recipeURL
 
@@ -114,8 +114,8 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 	c.Visit(recipeURL)
 }
 
-//scrapeXAH gets X recipes from AH Allerhande Search API
-func scrapeXAH(x int) *AHRecipes {
+//ScrapeXAH gets X recipes from AH Allerhande Search API
+func ScrapeXAH(x int) *AHRecipes {
 	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22,%22momenten;wat-eten-we-vandaag%22]&size=" + strconv.Itoa(x)
 
 	resp, err := http.Get(recipesURL)
@@ -135,14 +135,14 @@ func scrapeXAH(x int) *AHRecipes {
 	}
 
 	for i := range recipes.Recipes {
-		recipes.Recipes[i].scrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
+		recipes.Recipes[i].ScrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
 	}
 
 	return &recipes
 }
 
-//transformCSV transforms data in a csv acceptable format
-func (recipes *AHRecipes) transformCSV() (*[]string, *[][]string) {
+//TransformToCSV transforms data in a csv acceptable format
+func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 	headers := []string{"id", "title", "description", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
 	records := [][]string{}
 
@@ -155,8 +155,8 @@ func (recipes *AHRecipes) transformCSV() (*[]string, *[][]string) {
 	}
 
 	//remove duplicates
-	tags = removeDuplicatesUnordered(tags)
-	ingredients = removeDuplicatesUnordered(ingredients)
+	tags = RemoveDuplicatesUnordered(tags)
+	ingredients = RemoveDuplicatesUnordered(ingredients)
 
 	//append to headers
 	headers = append(headers, tags...)

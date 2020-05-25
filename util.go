@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-//removeDuplicatesUnorderedthat removes duplicates and ignores order
-func removeDuplicatesUnordered(elements []string) []string {
+//RemoveDuplicatesUnordered removes duplicates and ignores order
+func RemoveDuplicatesUnordered(elements []string) []string {
 	encountered := map[string]bool{}
 
 	// Create a map of all unique elements.
@@ -25,8 +25,8 @@ func removeDuplicatesUnordered(elements []string) []string {
 	return result
 }
 
-//writeCSV builds the recipe data CSV
-func writeCSV(filename string, header *[]string, records *[][]string) error {
+//WriteCSV builds the recipe data CSV
+func WriteCSV(filename string, header *[]string, records *[][]string) error {
 	//create csv
 	f, err := os.Create(filename)
 	if err != nil {

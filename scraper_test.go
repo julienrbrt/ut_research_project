@@ -2,7 +2,7 @@ package main
 
 import "testing"
 
-//TestScrapeAH tests scrapeAH
+//TestScrapeAH tests ScrapeAH
 func TestScrapeAH(t *testing.T) {
 	expectedRecipe := AHRecipe{
 		Title:    "Pasta pesto vegetarisch",
@@ -13,7 +13,7 @@ func TestScrapeAH(t *testing.T) {
 
 	//scrape recipe
 	recipe := AHRecipe{}
-	recipe.scrapeAH(expectedRecipe.URL)
+	recipe.ScrapeAH(expectedRecipe.URL)
 
 	if recipe.Title != expectedRecipe.Title {
 		t.Errorf("Title is incorrect, got '%s', want '%s'", recipe.Title, expectedRecipe.Title)
@@ -44,11 +44,11 @@ func TestScrapeAH(t *testing.T) {
 	}
 }
 
-//TestScrapeXAH tests scrapeXAH
+//TestScrapeXAH tests ScrapeXAH
 func TestScrapeXAH(t *testing.T) {
 	//scrape 10 recipes from AH
 	expectedRecipesLength := 10
-	recipes := scrapeXAH(expectedRecipesLength)
+	recipes := ScrapeXAH(expectedRecipesLength)
 
 	if len(recipes.Recipes) != 10 {
 		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(recipes.Recipes), expectedRecipesLength)

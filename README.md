@@ -1,5 +1,12 @@
 # BIT Research Project
 
+## Flow
+
+* Scrape
+* Clean
+* Generate
+* Recommend
+
 ## Useful Documentation
 
 * [Microsoft Recommenders](https://github.com/microsoft/recommenders)
