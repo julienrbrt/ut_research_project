@@ -39,3 +39,14 @@ func TestScrapeAH(t *testing.T) {
 		t.Errorf("URL is incorrect, got '%s', want '%s'", recipe.URL, expectedRecipe.URL)
 	}
 }
+
+//TestScrapeXAH tests scrapeXAH
+func TestScrapeXAH(t *testing.T) {
+	//scrape 10 recipes from AH
+	expectedRecipesLength := 10
+	recipes := scrapeXAH(expectedRecipesLength)
+
+	if len(*recipes) != 10 {
+		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(*recipes), expectedRecipesLength)
+	}
+}

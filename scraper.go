@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gocolly/colly/v2"
@@ -112,11 +113,11 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 	c.Visit(recipeURL)
 }
 
-//scrapeAllAH gets recipes from AH Allerhande Search API
-func scrapeAllAH() {
-	const AHRecipeURL = "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22,%22momenten;wat-eten-we-vandaag%22]&size=3000"
+//scrapeXAH gets X recipes from AH Allerhande Search API
+func scrapeXAH(x int) *[]AHRecipe {
+	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22,%22momenten;wat-eten-we-vandaag%22]&size=" + strconv.Itoa(x)
 
-	resp, err := http.Get(AHRecipeURL)
+	resp, err := http.Get(recipesURL)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -132,9 +133,11 @@ func scrapeAllAH() {
 		log.Fatalln(err)
 	}
 
-	var recipeList []AHRecipe
+	var recipes []AHRecipe
 	for _, recipe := range metadata.Recipes {
 		recipe.scrapeAH("https://www.ah.nl" + recipe.URL)
-		recipeList = append(recipeList, recipe)
+		recipes = append(recipes, recipe)
 	}
+
+	return &recipes
 }
