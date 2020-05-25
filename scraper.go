@@ -13,16 +13,15 @@ import (
 
 //AHRecipe contains a recipe data from AH Allerhande website
 type AHRecipe struct {
-	Title           string `json:"title"`
-	Ingredients     map[string]string
-	Instructions    []string
-	Tags            []string
-	Description     string        `json:"description"`
-	Classifications []interface{} `json:"classifications"`
-	CookTime        int           `json:"cookTime"`
-	OvenTime        int           `json:"ovenTime"`
-	WaitTime        int           `json:"waitTime"`
-	Rating          struct {
+	Title        string `json:"title"`
+	Ingredients  map[string]string
+	Instructions []string
+	Tags         []string
+	Description  string `json:"description"`
+	CookTime     int    `json:"cookTime"`
+	OvenTime     int    `json:"ovenTime"`
+	WaitTime     int    `json:"waitTime"`
+	Rating       struct {
 		AverageRating   int `json:"averageRating"`
 		NumberOfRatings int `json:"numberOfRatings"`
 	} `json:"rating"`
@@ -87,7 +86,9 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 	c.OnHTML("li[itemprop=\"ingredients\"]", func(e *colly.HTMLElement) {
 		e.ForEach("a", func(_ int, i *colly.HTMLElement) {
 			ingredient, _ := i.DOM.Attr("data-description-singular")
-			r.Ingredients[strings.TrimSpace(ingredient)] = strings.TrimSpace(i.DOM.Children().Text())
+			ingredient = strings.ToLower(ingredient)
+
+			r.Ingredients[ingredient] = strings.TrimSpace(i.DOM.Children().Text())
 		})
 	})
 
@@ -101,7 +102,7 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 	//get tags
 	c.OnHTML("section.tags", func(e *colly.HTMLElement) {
 		e.ForEach("a", func(_ int, i *colly.HTMLElement) {
-			r.Tags = append(r.Tags, strings.TrimSpace(i.Text))
+			r.Tags = append(r.Tags, strings.ToLower(strings.TrimSpace(i.Text)))
 		})
 	})
 
@@ -140,4 +141,53 @@ func scrapeXAH(x int) *[]AHRecipe {
 	}
 
 	return &recipes
+}
+
+//RecipeCSVData transform data in a csv acceptable format
+func RecipeCSVData(recipes *[]AHRecipe) (*[]string, *[][]string) {
+	headers := []string{"id", "title", "description", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
+	records := [][]string{}
+
+	//add all tags from recipes
+	var tags []string
+	for _, recipe := range *recipes {
+		tags = append(tags, recipe.Tags...)
+	}
+
+	//remove duplicates
+	tags = removeDuplicatesUnordered(tags)
+
+	//append to headers
+	headers = append(headers, tags...)
+
+	for i, recipe := range *recipes {
+		data := []string{
+			strconv.Itoa(i),
+			recipe.Title,
+			recipe.Description,
+			strconv.Itoa(recipe.CookTime + recipe.OvenTime + recipe.WaitTime),
+			strconv.Itoa(recipe.Rating.AverageRating),
+			strconv.Itoa(recipe.Rating.NumberOfRatings),
+			recipe.ImageURL,
+			recipe.URL,
+		}
+
+		//map of contained tags
+		set := make(map[string]bool)
+		for _, t := range recipe.Tags {
+			set[t] = true
+		}
+
+		for _, t := range tags {
+			if set[t] {
+				data = append(data, "1")
+			} else {
+				data = append(data, "0")
+			}
+		}
+
+		records = append(records, data)
+	}
+
+	return &headers, &records
 }

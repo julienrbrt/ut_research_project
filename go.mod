@@ -10,6 +10,7 @@ require (
 	github.com/antchfx/xpath v1.1.8 // indirect
 	github.com/gocolly/colly/v2 v2.0.1
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/pkg/errors v0.9.1
 	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 )
