@@ -13,15 +13,16 @@ import (
 
 //AHRecipe contains a recipe data from AH Allerhande website
 type AHRecipe struct {
-	Title        string `json:"title"`
-	Ingredients  map[string]string
-	Instructions []string
-	Tags         []string
-	Description  string `json:"description"`
-	CookTime     int    `json:"cookTime"`
-	OvenTime     int    `json:"ovenTime"`
-	WaitTime     int    `json:"waitTime"`
-	Rating       struct {
+	Title           string `json:"title"`
+	Ingredients     []string
+	IngredientsOnly []string
+	Instructions    []string
+	Tags            []string
+	Description     string `json:"description"`
+	CookTime        int    `json:"cookTime"`
+	OvenTime        int    `json:"ovenTime"`
+	WaitTime        int    `json:"waitTime"`
+	Rating          struct {
 		AverageRating   int `json:"averageRating"`
 		NumberOfRatings int `json:"numberOfRatings"`
 	} `json:"rating"`
@@ -56,8 +57,8 @@ type AHRecipe struct {
 	URL      string `json:"href"`
 }
 
-//AHRecipeMetadata contains recipes metadata from AH recipes
-type AHRecipeMetadata struct {
+//AHRecipes contains recipes metadata from AH recipes
+type AHRecipes struct {
 	Recipes []AHRecipe `json:"recipes"`
 }
 
@@ -65,7 +66,6 @@ type AHRecipeMetadata struct {
 func (r *AHRecipe) scrapeAH(recipeURL string) {
 	//get url
 	r.URL = recipeURL
-	r.Ingredients = make(map[string]string)
 
 	c := colly.NewCollector(
 		// Visit only domains: www.ah.nl
@@ -86,9 +86,9 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 	c.OnHTML("li[itemprop=\"ingredients\"]", func(e *colly.HTMLElement) {
 		e.ForEach("a", func(_ int, i *colly.HTMLElement) {
 			ingredient, _ := i.DOM.Attr("data-description-singular")
-			ingredient = strings.ToLower(ingredient)
 
-			r.Ingredients[ingredient] = strings.TrimSpace(i.DOM.Children().Text())
+			r.IngredientsOnly = append(r.IngredientsOnly, strings.ToLower(ingredient))
+			r.Ingredients = append(r.Ingredients, strings.TrimSpace(i.DOM.Children().Text()))
 		})
 	})
 
@@ -115,7 +115,7 @@ func (r *AHRecipe) scrapeAH(recipeURL string) {
 }
 
 //scrapeXAH gets X recipes from AH Allerhande Search API
-func scrapeXAH(x int) *[]AHRecipe {
+func scrapeXAH(x int) *AHRecipes {
 	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22,%22momenten;wat-eten-we-vandaag%22]&size=" + strconv.Itoa(x)
 
 	resp, err := http.Get(recipesURL)
@@ -128,39 +128,41 @@ func scrapeXAH(x int) *[]AHRecipe {
 	byteValue, _ := ioutil.ReadAll(resp.Body)
 
 	//unmarshal json
-	var metadata AHRecipeMetadata
-	err = json.Unmarshal(byteValue, &metadata)
+	var recipes AHRecipes
+	err = json.Unmarshal(byteValue, &recipes)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	var recipes []AHRecipe
-	for _, recipe := range metadata.Recipes {
-		recipe.scrapeAH("https://www.ah.nl" + recipe.URL)
-		recipes = append(recipes, recipe)
+	for i := range recipes.Recipes {
+		recipes.Recipes[i].scrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
 	}
 
 	return &recipes
 }
 
-//RecipeCSVData transform data in a csv acceptable format
-func RecipeCSVData(recipes *[]AHRecipe) (*[]string, *[][]string) {
+//transformCSV transforms data in a csv acceptable format
+func (recipes *AHRecipes) transformCSV() (*[]string, *[][]string) {
 	headers := []string{"id", "title", "description", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
 	records := [][]string{}
 
-	//add all tags from recipes
+	//add all tags and ingredients from recipes
 	var tags []string
-	for _, recipe := range *recipes {
+	var ingredients []string
+	for _, recipe := range recipes.Recipes {
 		tags = append(tags, recipe.Tags...)
+		ingredients = append(ingredients, recipe.IngredientsOnly...)
 	}
 
 	//remove duplicates
 	tags = removeDuplicatesUnordered(tags)
+	ingredients = removeDuplicatesUnordered(ingredients)
 
 	//append to headers
 	headers = append(headers, tags...)
+	headers = append(headers, ingredients...)
 
-	for i, recipe := range *recipes {
+	for i, recipe := range recipes.Recipes {
 		data := []string{
 			strconv.Itoa(i),
 			recipe.Title,
@@ -178,8 +180,24 @@ func RecipeCSVData(recipes *[]AHRecipe) (*[]string, *[][]string) {
 			set[t] = true
 		}
 
+		//add tags
 		for _, t := range tags {
 			if set[t] {
+				data = append(data, "1")
+			} else {
+				data = append(data, "0")
+			}
+		}
+
+		//map of contained ingredients
+		set = make(map[string]bool)
+		for _, i := range recipe.IngredientsOnly {
+			set[i] = true
+		}
+
+		//add ingredients
+		for _, i := range ingredients {
+			if set[i] {
 				data = append(data, "1")
 			} else {
 				data = append(data, "0")

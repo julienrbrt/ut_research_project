@@ -25,10 +25,10 @@ func removeDuplicatesUnordered(elements []string) []string {
 	return result
 }
 
-//writeRecipeCSV builds the recipe data CSV
-func writeRecipeCSV(header *[]string, records *[][]string) error {
+//writeCSV builds the recipe data CSV
+func writeCSV(filename string, header *[]string, records *[][]string) error {
 	//create csv
-	f, err := os.Create("data/item_recipes.csv")
+	f, err := os.Create(filename)
 	if err != nil {
 		return err
 	}

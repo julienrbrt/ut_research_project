@@ -23,6 +23,10 @@ func TestScrapeAH(t *testing.T) {
 		t.Errorf("Ingredients are incorrect, got '%v', want a positive non nil value", recipe.Ingredients)
 	}
 
+	if len(recipe.Ingredients) != len(recipe.IngredientsOnly) {
+		t.Errorf("Ingredients are incorrect, got '%d', want '%d'", len(recipe.Ingredients), len(recipe.IngredientsOnly))
+	}
+
 	if recipe.Instructions == nil || len(recipe.Instructions) == 0 {
 		t.Errorf("Instructions are incorrect, got '%v', want a positive non nil value", recipe.Instructions)
 	}
@@ -46,7 +50,7 @@ func TestScrapeXAH(t *testing.T) {
 	expectedRecipesLength := 10
 	recipes := scrapeXAH(expectedRecipesLength)
 
-	if len(*recipes) != 10 {
-		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(*recipes), expectedRecipesLength)
+	if len(recipes.Recipes) != 10 {
+		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(recipes.Recipes), expectedRecipesLength)
 	}
 }
