@@ -44,11 +44,11 @@ func TestScrapeAH(t *testing.T) {
 	}
 }
 
-//TestScrapeXAH tests ScrapeXAH
-func TestScrapeXAH(t *testing.T) {
+//TestScrapeNAH tests ScrapeNAH
+func TestScrapeNAH(t *testing.T) {
 	//scrape 10 recipes from AH
 	expectedRecipesLength := 10
-	recipes := ScrapeXAH(expectedRecipesLength)
+	recipes := ScrapeNAH(expectedRecipesLength)
 
 	if len(recipes.Recipes) != 10 {
 		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(recipes.Recipes), expectedRecipesLength)

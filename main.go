@@ -1,20 +1,15 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 func main() {
-	//Scrape
-	recipes := ScrapeXAH(10)
-	header, records := recipes.TransformToCSV()
-	// err := WriteCSV("data/item_recipes.csv", header, records)
-
-	//Clean
-	err := CleanCSV(header, records)
+	df, err := LoadData(5000, false)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
-	//Generate
-
-	//Recommend
+	fmt.Println(df)
 }

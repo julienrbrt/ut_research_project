@@ -1,11 +1,13 @@
 # BIT Research Project
 
+The recommender uses [AH Allerhande](https://www.ah.nl/allerhande) data for recipes.
+
 ## Flow
 
-* Scrape
-* Clean
-* Generate
-* Recommend
+* Scraping
+* Processing
+* Generating
+* Recommending
 
 ## Useful Documentation
 

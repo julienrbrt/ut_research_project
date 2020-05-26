@@ -18,46 +18,45 @@ type AHRecipe struct {
 	IngredientsOnly []string
 	Instructions    []string
 	Tags            []string
-	Description     string `json:"description"`
-	CookTime        int    `json:"cookTime"`
-	OvenTime        int    `json:"ovenTime"`
-	WaitTime        int    `json:"waitTime"`
+	CookTime        int `json:"cookTime"`
+	OvenTime        int `json:"ovenTime"`
+	WaitTime        int `json:"waitTime"`
 	Rating          struct {
 		AverageRating   int `json:"averageRating"`
 		NumberOfRatings int `json:"numberOfRatings"`
 	} `json:"rating"`
 	Nutritions struct {
 		SATURATEDFAT struct {
-			Name  string `json:"name"`
-			Unit  string `json:"unit"`
-			Value int    `json:"value"`
+			Name  string  `json:"name"`
+			Unit  string  `json:"unit"`
+			Value float32 `json:"value"`
 		} `json:"SATURATED_FAT"`
 		ENERGY struct {
-			Name  string `json:"name"`
-			Unit  string `json:"unit"`
-			Value int    `json:"value"`
+			Name  string  `json:"name"`
+			Unit  string  `json:"unit"`
+			Value float32 `json:"value"`
 		} `json:"ENERGY"`
 		PROTEIN struct {
-			Name  string `json:"name"`
-			Unit  string `json:"unit"`
-			Value int    `json:"value"`
+			Name  string  `json:"name"`
+			Unit  string  `json:"unit"`
+			Value float32 `json:"value"`
 		} `json:"PROTEIN"`
 		FAT struct {
-			Name  string `json:"name"`
-			Unit  string `json:"unit"`
-			Value int    `json:"value"`
+			Name  string  `json:"name"`
+			Unit  string  `json:"unit"`
+			Value float32 `json:"value"`
 		} `json:"FAT"`
 		CARBOHYDRATES struct {
-			Name  string `json:"name"`
-			Unit  string `json:"unit"`
-			Value int    `json:"value"`
+			Name  string  `json:"name"`
+			Unit  string  `json:"unit"`
+			Value float32 `json:"value"`
 		} `json:"CARBOHYDRATES"`
 	} `json:"nutritions"`
 	ImageURL string
 	URL      string `json:"href"`
 }
 
-//AHRecipes contains recipes metadata from AH recipes
+//AHRecipes contains a recipe list from AH
 type AHRecipes struct {
 	Recipes []AHRecipe `json:"recipes"`
 }
@@ -114,9 +113,9 @@ func (r *AHRecipe) ScrapeAH(recipeURL string) {
 	c.Visit(recipeURL)
 }
 
-//ScrapeXAH gets X recipes from AH Allerhande Search API
-func ScrapeXAH(x int) *AHRecipes {
-	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22,%22momenten;wat-eten-we-vandaag%22]&size=" + strconv.Itoa(x)
+//ScrapeNAH gets N recipes from AH Allerhande Search API
+func ScrapeNAH(n int) *AHRecipes {
+	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22]&size=" + strconv.Itoa(n)
 
 	resp, err := http.Get(recipesURL)
 	if err != nil {
@@ -135,77 +134,9 @@ func ScrapeXAH(x int) *AHRecipes {
 	}
 
 	for i := range recipes.Recipes {
+		log.Printf("Getting recipe %d / %d\n", i+1, n)
 		recipes.Recipes[i].ScrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
 	}
 
 	return &recipes
-}
-
-//TransformToCSV transforms data in a csv acceptable format
-func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
-	headers := []string{"id", "title", "description", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
-	records := [][]string{}
-
-	//add all tags and ingredients from recipes
-	var tags []string
-	var ingredients []string
-	for _, recipe := range recipes.Recipes {
-		tags = append(tags, recipe.Tags...)
-		ingredients = append(ingredients, recipe.IngredientsOnly...)
-	}
-
-	//remove duplicates
-	tags = RemoveDuplicatesUnordered(tags)
-	ingredients = RemoveDuplicatesUnordered(ingredients)
-
-	//append to headers
-	headers = append(headers, tags...)
-	headers = append(headers, ingredients...)
-
-	for i, recipe := range recipes.Recipes {
-		data := []string{
-			strconv.Itoa(i),
-			recipe.Title,
-			recipe.Description,
-			strconv.Itoa(recipe.CookTime + recipe.OvenTime + recipe.WaitTime),
-			strconv.Itoa(recipe.Rating.AverageRating),
-			strconv.Itoa(recipe.Rating.NumberOfRatings),
-			recipe.ImageURL,
-			recipe.URL,
-		}
-
-		//map of contained tags
-		set := make(map[string]bool)
-		for _, t := range recipe.Tags {
-			set[t] = true
-		}
-
-		//add tags
-		for _, t := range tags {
-			if set[t] {
-				data = append(data, "1")
-			} else {
-				data = append(data, "0")
-			}
-		}
-
-		//map of contained ingredients
-		set = make(map[string]bool)
-		for _, i := range recipe.IngredientsOnly {
-			set[i] = true
-		}
-
-		//add ingredients
-		for _, i := range ingredients {
-			if set[i] {
-				data = append(data, "1")
-			} else {
-				data = append(data, "0")
-			}
-		}
-
-		records = append(records, data)
-	}
-
-	return &headers, &records
 }
