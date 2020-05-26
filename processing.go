@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strconv"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/go-gota/gota/dataframe"
 )
+
+const recipesCSVPath = "data/item_recipes.csv"
 
 //TransformToCSV transforms data in a csv acceptable format
 func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
@@ -153,9 +156,9 @@ func CleanIngredientsAndTags(data []string) []string {
 	return data
 }
 
-//LoadData recipes data
+//LoadData recipes data from internet
 func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
-	//scrape
+	//scrape recipes
 	recipes, err := ScrapeNAH(n)
 	if err != nil {
 		return dataframe.DataFrame{}, err
@@ -166,7 +169,7 @@ func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
 
 	if writeCSV {
 		log.Println("Writing CSV...")
-		if err := WriteCSV("data/item_recipes.csv", header, records); err != nil {
+		if err := WriteCSV(recipesCSVPath, header, records); err != nil {
 			return dataframe.DataFrame{}, err
 		}
 	}
@@ -176,6 +179,20 @@ func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
 	data = append(data, *records...)
 
 	df := dataframe.LoadRecords(data)
+
+	return df, nil
+}
+
+//LoadDataFromCSV recipes data from on disk CSV
+func LoadDataFromCSV() (dataframe.DataFrame, error) {
+	content, err := ioutil.ReadFile(recipesCSVPath)
+	if err != nil {
+		return dataframe.DataFrame{}, nil
+	}
+
+	df := dataframe.ReadCSV(strings.NewReader(string(content)),
+		dataframe.WithDelimiter(','),
+		dataframe.HasHeader(true))
 
 	return df, nil
 }
