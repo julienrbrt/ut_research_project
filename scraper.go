@@ -114,12 +114,12 @@ func (r *AHRecipe) ScrapeAH(recipeURL string) {
 }
 
 //ScrapeNAH gets N recipes from AH Allerhande Search API
-func ScrapeNAH(n int) *AHRecipes {
+func ScrapeNAH(n int) (*AHRecipes, error) {
 	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22]&size=" + strconv.Itoa(n)
 
 	resp, err := http.Get(recipesURL)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -130,7 +130,7 @@ func ScrapeNAH(n int) *AHRecipes {
 	var recipes AHRecipes
 	err = json.Unmarshal(byteValue, &recipes)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
 	for i := range recipes.Recipes {
@@ -138,5 +138,5 @@ func ScrapeNAH(n int) *AHRecipes {
 		recipes.Recipes[i].ScrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
 	}
 
-	return &recipes
+	return &recipes, nil
 }

@@ -6,9 +6,9 @@ import (
 )
 
 func main() {
-	df, err := LoadData(5000, true)
+	df, err := LoadData(4000, true)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(df)

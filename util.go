@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/csv"
-	"log"
 	"os"
 
 	"github.com/pkg/errors"
@@ -50,7 +49,7 @@ func WriteCSV(filename string, header *[]string, records *[][]string) error {
 	w.Flush()
 
 	if err := w.Error(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return nil

@@ -91,7 +91,7 @@ func CleanIngredientsAndTags(data []string) []string {
 		//remove non-alphanumeric chracter
 		reg, err := regexp.Compile("[^a-zA-Z ]+")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		data[i] = reg.ReplaceAllString(data[i], "")
 
@@ -156,7 +156,10 @@ func CleanIngredientsAndTags(data []string) []string {
 //LoadData recipes data
 func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
 	//scrape
-	recipes := ScrapeNAH(n)
+	recipes, err := ScrapeNAH(n)
+	if err != nil {
+		return dataframe.DataFrame{}, err
+	}
 
 	//processing
 	header, records := recipes.TransformToCSV()
@@ -164,7 +167,7 @@ func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
 	if writeCSV {
 		log.Println("Writing CSV...")
 		if err := WriteCSV("data/item_recipes.csv", header, records); err != nil {
-			log.Fatalln(err)
+			return dataframe.DataFrame{}, err
 		}
 	}
 
