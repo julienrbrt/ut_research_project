@@ -89,15 +89,15 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 func CleanIngredientsAndTags(data []string) []string {
 	for i := range data {
 		//remove non-alphanumeric chracter
-		reg, err := regexp.Compile("[^a-zA-Z]+")
+		reg, err := regexp.Compile("[^a-zA-Z ]+")
 		if err != nil {
 			log.Fatal(err)
 		}
 		data[i] = reg.ReplaceAllString(data[i], "")
 
 		//remove AH brands
-		data[i] = strings.ReplaceAll(data[i], "ahbiologisch", "")
-		data[i] = strings.ReplaceAll(data[i], "ahbasic", "")
+		data[i] = strings.ReplaceAll(data[i], "ah biologisch", "")
+		data[i] = strings.ReplaceAll(data[i], "ah basic", "")
 
 		//remove food storage
 		data[i] = strings.ReplaceAll(data[i], "houdbare", "")
@@ -105,14 +105,14 @@ func CleanIngredientsAndTags(data []string) []string {
 		data[i] = strings.ReplaceAll(data[i], "diepvries", "")
 		data[i] = strings.ReplaceAll(data[i], "verse", "")
 		data[i] = strings.ReplaceAll(data[i], "gemalen", "")
-		data[i] = strings.ReplaceAll(data[i], "halfgedroogde", "")
-		data[i] = strings.ReplaceAll(data[i], "gedroogde", "")
-		data[i] = strings.ReplaceAll(data[i], "gedroogd", "")
+		data[i] = strings.ReplaceAll(data[i], "halfgedroogde ", "")
+		data[i] = strings.ReplaceAll(data[i], "gedroogde ", "")
+		data[i] = strings.ReplaceAll(data[i], "gedroogd ", "")
 		data[i] = strings.ReplaceAll(data[i], "gesneden", "")
 		data[i] = strings.ReplaceAll(data[i], "zongerijpte", "")
 		data[i] = strings.ReplaceAll(data[i], "stuckjes", "")
 		data[i] = strings.ReplaceAll(data[i], "stukjes", "")
-		data[i] = strings.ReplaceAll(data[i], "alaminute", "")
+		data[i] = strings.ReplaceAll(data[i], "a la minute", "")
 		data[i] = strings.ReplaceAll(data[i], "kruimige", "")
 		data[i] = strings.ReplaceAll(data[i], "fijne", "")
 		data[i] = strings.ReplaceAll(data[i], "fijn", "")
@@ -123,21 +123,22 @@ func CleanIngredientsAndTags(data []string) []string {
 		data[i] = strings.ReplaceAll(data[i], "klein", "")
 		data[i] = strings.ReplaceAll(data[i], "grote", "")
 		data[i] = strings.ReplaceAll(data[i], "groot", "")
-		data[i] = strings.ReplaceAll(data[i], "biologische", "")
-		data[i] = strings.ReplaceAll(data[i], "biologisch", "")
-		data[i] = strings.ReplaceAll(data[i], "halfvolle", "")
-		data[i] = strings.ReplaceAll(data[i], "volle", "")
-		data[i] = strings.ReplaceAll(data[i], "magere", "")
+		data[i] = strings.ReplaceAll(data[i], "biologische ", "")
+		data[i] = strings.ReplaceAll(data[i], "biologisch ", "")
+		data[i] = strings.ReplaceAll(data[i], "halfvolle ", "")
+		data[i] = strings.ReplaceAll(data[i], "volle ", "")
+		data[i] = strings.ReplaceAll(data[i], "mager ", "")
+		data[i] = strings.ReplaceAll(data[i], "magere ", "")
+		data[i] = strings.ReplaceAll(data[i], "halfomhalf ", "")
 		data[i] = strings.ReplaceAll(data[i], "zoete", "")
-		data[i] = strings.ReplaceAll(data[i], "zoet", "")
-		data[i] = strings.ReplaceAll(data[i], "mini", "")
-		data[i] = strings.ReplaceAll(data[i], "iets", "")
+		data[i] = strings.ReplaceAll(data[i], "iets ", "")
+		data[i] = strings.ReplaceAll(data[i], "roerbakgroenten", "roerbakgroente")
 
 		//trimm space
 		data[i] = strings.TrimSpace(data[i])
 
 		//replace some ingredients
-		toReplace := []string{"kruidenmix", "aardappel", "saus", "boter", "olie", "groentemix"}
+		toReplace := []string{"kruidenmix", "aardappel", "saus", "boter", "olie", "groentemix", "roerbakgroente", "brood"}
 		for _, ingredient := range toReplace {
 			if strings.Contains(data[i], ingredient) {
 				data[i] = ingredient

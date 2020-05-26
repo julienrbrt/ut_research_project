@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	df, err := LoadData(5000, false)
+	df, err := LoadData(5000, true)
 	if err != nil {
 		log.Fatal(err)
 	}
