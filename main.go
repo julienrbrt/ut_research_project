@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	// df, err := LoadData(4950, true)
 	df, err := LoadDataFromCSV()
 	if err != nil {
 		log.Fatalln(err)

@@ -92,7 +92,7 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 func CleanIngredientsAndTags(data []string) []string {
 	for i := range data {
 		//remove non-alphanumeric chracter
-		reg, err := regexp.Compile("[^a-zA-Z ]+")
+		reg, err := regexp.Compile("[^A-zÀ-ú ]+")
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -137,9 +137,6 @@ func CleanIngredientsAndTags(data []string) []string {
 		data[i] = strings.ReplaceAll(data[i], "iets ", "")
 		data[i] = strings.ReplaceAll(data[i], "roerbakgroenten", "roerbakgroente")
 
-		//trimm space
-		data[i] = strings.TrimSpace(data[i])
-
 		//replace some ingredients
 		toReplace := []string{"kruidenmix", "aardappel", "saus", "boter", "olie", "groentemix", "roerbakgroente", "brood"}
 		for _, ingredient := range toReplace {
@@ -148,6 +145,11 @@ func CleanIngredientsAndTags(data []string) []string {
 			}
 
 		}
+
+		//trimm space
+		data[i] = strings.TrimSpace(data[i])
+		spaceReg := regexp.MustCompile(`\s+`)
+		data[i] = spaceReg.ReplaceAllString(data[i], " ")
 	}
 
 	//remove duplicates
