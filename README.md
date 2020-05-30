@@ -11,6 +11,7 @@ The recommender uses [AH Allerhande](https://www.ah.nl/allerhande) data for reci
 
 ## Useful Documentation
 
-* [Microsoft Recommenders](https://github.com/microsoft/recommenders)
-* [Gorse](https://github.com/zhenghaoz/gorse)
 * [Colly](https://github.com/gocolly/colly)
+* [GoFakeIt](https://github.com/brianvoe/gofakeit)
+* [Gorse](https://github.com/zhenghaoz/gorse)
+* [Microsoft Recommenders](https://github.com/microsoft/recommenders)

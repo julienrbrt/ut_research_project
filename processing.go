@@ -28,8 +28,8 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 	}
 
 	//clean ingredients and tags
-	tags = CleanIngredientsAndTags(tags)
-	ingredients = CleanIngredientsAndTags(ingredients)
+	tags = CleanIngredientsAndTags(tags, false)
+	ingredients = CleanIngredientsAndTags(ingredients, true)
 
 	//append to headers
 	headers = append(headers, tags...)
@@ -48,8 +48,8 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 		}
 
 		//clean ingredients and tags
-		recipe.Tags = CleanIngredientsAndTags(recipe.Tags)
-		recipe.IngredientsOnly = CleanIngredientsAndTags(recipe.IngredientsOnly)
+		recipe.Tags = CleanIngredientsAndTags(recipe.Tags, false)
+		recipe.IngredientsOnly = CleanIngredientsAndTags(recipe.IngredientsOnly, true)
 
 		//map of contained tags
 		set := make(map[string]bool)
@@ -89,7 +89,7 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 
 //CleanIngredientsAndTags clean recipes ingredient or tags list
 //TODO find a better way for text processing
-func CleanIngredientsAndTags(data []string) []string {
+func CleanIngredientsAndTags(data []string, isIngredient bool) []string {
 	for i := range data {
 		//remove non-alphanumeric chracter
 		reg, err := regexp.Compile("[^A-zÀ-ú ]+")
@@ -149,7 +149,15 @@ func CleanIngredientsAndTags(data []string) []string {
 		//trimm space
 		data[i] = strings.TrimSpace(data[i])
 		spaceReg := regexp.MustCompile(`\s+`)
-		data[i] = spaceReg.ReplaceAllString(data[i], " ")
+		data[i] = spaceReg.ReplaceAllString(data[i], "_")
+
+		//append ingredient or tag name
+		if isIngredient {
+			data[i] = "ingredient_" + data[i]
+		} else {
+			data[i] = "tag_" + data[i]
+		}
+
 	}
 
 	//remove duplicates

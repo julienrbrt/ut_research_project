@@ -13,17 +13,7 @@ type User struct {
 	OrdersRating    map[string]int
 }
 
-//FoodPreferences contains the user food preferences
-type FoodPreferences string
-
-const (
-	vegetarian FoodPreferences = "vegetarisch"
-	vegan                      = "vegan"
-	budget                     = "budget"
-	snack                      = "frituren"
-	french                     = "frans"
-	spanish                    = "spaans"
-)
+// random food preferences for everythings that contain tag_
 
 //GenerateUserData generates user data
 func GenerateUserData(recipes dataframe.DataFrame) error {
