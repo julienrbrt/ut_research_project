@@ -138,7 +138,7 @@ func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 	records := [][]string{}
 
 	//append tags to headers
-	// headers = append(headers, tags...)
+	headers = append(headers, tags...)
 
 	for _, user := range users.Users {
 		//fill in data
@@ -148,6 +148,21 @@ func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 			strconv.Itoa(user.Age),
 			fmt.Sprintf("%f", user.Latitude),
 			fmt.Sprintf("%f", user.Longitude),
+		}
+
+		//map of contained tags
+		set := make(map[string]bool)
+		for _, t := range user.FoodPreferences {
+			set[t] = true
+		}
+
+		//add tags
+		for _, t := range tags {
+			if set[t] {
+				data = append(data, "1")
+			} else {
+				data = append(data, "0")
+			}
 		}
 
 		records = append(records, data)
