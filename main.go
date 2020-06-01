@@ -1,16 +1,14 @@
 package main
 
-import (
-	"fmt"
-	"log"
-)
-
 func main() {
-	// df, err := LoadData(4950, true)
-	df, err := LoadDataFromCSV()
-	if err != nil {
-		log.Fatalln(err)
-	}
+	//Scrape and Process
+	// recipes := LoadRecipesData(4950, true)
+	recipes := LoadCSV(recipesCSVPath)
 
-	fmt.Println(df)
+	//Generate
+	_, _ = LoadUsersData(5, recipes, true)
+	// users := LoadCSV(usersCSVPath)
+	// orders := LoadCSV(ordersCSVPath)
+
+	//Recommend
 }

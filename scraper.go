@@ -62,7 +62,7 @@ type AHRecipes struct {
 }
 
 //ScrapeAH scrapes a recipe from Albert Heijn Allerhande website
-func (r *AHRecipe) ScrapeAH(recipeURL string) {
+func (r *AHRecipe) scrapeAH(recipeURL string) {
 	//get url
 	r.URL = recipeURL
 
@@ -113,8 +113,8 @@ func (r *AHRecipe) ScrapeAH(recipeURL string) {
 	c.Visit(recipeURL)
 }
 
-//ScrapeNAH gets N recipes from AH Allerhande Search API
-func ScrapeNAH(n int) (*AHRecipes, error) {
+//scrapeNAH gets N recipes from AH Allerhande Search API
+func scrapeNAH(n int) (*AHRecipes, error) {
 	recipesURL := "https://www.ah.nl/allerhande2/api/recipe-search?searchText=&filters=[%22menugang;hoofdgerecht%22]&size=" + strconv.Itoa(n)
 
 	resp, err := http.Get(recipesURL)
@@ -135,7 +135,7 @@ func ScrapeNAH(n int) (*AHRecipes, error) {
 
 	for i := range recipes.Recipes {
 		log.Printf("Getting recipe %d / %d\n", i+1, n)
-		recipes.Recipes[i].ScrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
+		recipes.Recipes[i].scrapeAH("https://www.ah.nl" + recipes.Recipes[i].URL)
 	}
 
 	return &recipes, nil

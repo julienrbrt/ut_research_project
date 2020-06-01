@@ -13,7 +13,7 @@ func TestScrapeAH(t *testing.T) {
 
 	//scrape recipe
 	recipe := AHRecipe{}
-	recipe.ScrapeAH(expectedRecipe.URL)
+	recipe.scrapeAH(expectedRecipe.URL)
 
 	if recipe.Title != expectedRecipe.Title {
 		t.Errorf("Title is incorrect, got '%s', want '%s'", recipe.Title, expectedRecipe.Title)
@@ -48,7 +48,7 @@ func TestScrapeAH(t *testing.T) {
 func TestScrapeNAH(t *testing.T) {
 	//scrape 10 recipes from AH
 	expectedRecipesLength := 10
-	recipes, _ := ScrapeNAH(expectedRecipesLength)
+	recipes, _ := scrapeNAH(expectedRecipesLength)
 
 	if len(recipes.Recipes) != 10 {
 		t.Errorf("The number of recipes is incorrect, got '%d', want '%d'", len(recipes.Recipes), expectedRecipesLength)

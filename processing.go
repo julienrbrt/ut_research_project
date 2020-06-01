@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"regexp"
 	"strconv"
@@ -12,10 +11,11 @@ import (
 
 const recipesCSVPath = "data/item_recipes.csv"
 
-//TransformToCSV transforms data in a csv acceptable format
-func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
+//asRecipesDf converts a list of recipes as a dataframe
+func (recipes *AHRecipes) asRecipesDf() (dataframe.DataFrame, error) {
 	log.Println("Processing...")
 
+	var err error
 	headers := []string{"id", "title", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
 	records := [][]string{}
 
@@ -28,8 +28,14 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 	}
 
 	//clean ingredients and tags
-	tags = CleanIngredientsAndTags(tags, false)
-	ingredients = CleanIngredientsAndTags(ingredients, true)
+	tags, err = cleanIngredientsAndTags(tags, false)
+	if err != nil {
+		return dataframe.DataFrame{}, err
+	}
+	ingredients, err = cleanIngredientsAndTags(ingredients, true)
+	if err != nil {
+		return dataframe.DataFrame{}, err
+	}
 
 	//append to headers
 	headers = append(headers, tags...)
@@ -48,8 +54,14 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 		}
 
 		//clean ingredients and tags
-		recipe.Tags = CleanIngredientsAndTags(recipe.Tags, false)
-		recipe.IngredientsOnly = CleanIngredientsAndTags(recipe.IngredientsOnly, true)
+		recipe.Tags, err = cleanIngredientsAndTags(recipe.Tags, false)
+		if err != nil {
+			return dataframe.DataFrame{}, nil
+		}
+		recipe.IngredientsOnly, err = cleanIngredientsAndTags(recipe.IngredientsOnly, true)
+		if err != nil {
+			return dataframe.DataFrame{}, nil
+		}
 
 		//map of contained tags
 		set := make(map[string]bool)
@@ -84,17 +96,20 @@ func (recipes *AHRecipes) TransformToCSV() (*[]string, *[][]string) {
 		records = append(records, data)
 	}
 
-	return &headers, &records
+	//load as dataframe
+	df := dataframe.LoadRecords(append([][]string{headers}, records...))
+
+	return df, nil
 }
 
-//CleanIngredientsAndTags clean recipes ingredient or tags list
+//cleanIngredientsAndTags clean recipes ingredient or tags list
 //TODO find a better way for text processing
-func CleanIngredientsAndTags(data []string, isIngredient bool) []string {
+func cleanIngredientsAndTags(data []string, isIngredient bool) ([]string, error) {
 	for i := range data {
 		//remove non-alphanumeric chracter
 		reg, err := regexp.Compile("[^A-zÀ-ú ]+")
 		if err != nil {
-			log.Fatalln(err)
+			return []string{}, nil
 		}
 		data[i] = reg.ReplaceAllString(data[i], "")
 
@@ -143,7 +158,6 @@ func CleanIngredientsAndTags(data []string, isIngredient bool) []string {
 			if strings.Contains(data[i], ingredient) {
 				data[i] = ingredient
 			}
-
 		}
 
 		//trimm space
@@ -163,46 +177,29 @@ func CleanIngredientsAndTags(data []string, isIngredient bool) []string {
 	//remove duplicates
 	data = RemoveDuplicatesUnordered(data)
 
-	return data
+	return data, nil
 }
 
-//LoadData recipes data from internet
-func LoadData(n int, writeCSV bool) (dataframe.DataFrame, error) {
+//LoadRecipesData of N recipes from internet
+func LoadRecipesData(n int, writeCSV bool) dataframe.DataFrame {
 	//scrape recipes
-	recipes, err := ScrapeNAH(n)
+	recipes, err := scrapeNAH(n)
 	if err != nil {
-		return dataframe.DataFrame{}, err
+		log.Fatalln(err)
 	}
 
-	//processing
-	header, records := recipes.TransformToCSV()
+	//processing and load data
+	df, err := recipes.asRecipesDf()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	if writeCSV {
-		log.Println("Writing CSV...")
-		if err := WriteCSV(recipesCSVPath, header, records); err != nil {
-			return dataframe.DataFrame{}, err
+		//save order csv
+		if err := WriteCSV(df, recipesCSVPath); err != nil {
+			log.Fatalln(err)
 		}
 	}
 
-	//load data
-	data := [][]string{*header}
-	data = append(data, *records...)
-
-	df := dataframe.LoadRecords(data)
-
-	return df, nil
-}
-
-//LoadDataFromCSV recipes data from on disk CSV
-func LoadDataFromCSV() (dataframe.DataFrame, error) {
-	content, err := ioutil.ReadFile(recipesCSVPath)
-	if err != nil {
-		return dataframe.DataFrame{}, nil
-	}
-
-	df := dataframe.ReadCSV(strings.NewReader(string(content)),
-		dataframe.WithDelimiter(','),
-		dataframe.HasHeader(true))
-
-	return df, nil
+	return df
 }

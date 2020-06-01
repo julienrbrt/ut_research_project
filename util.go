@@ -1,10 +1,12 @@
 package main
 
 import (
-	"encoding/csv"
+	"io/ioutil"
+	"log"
 	"os"
+	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/go-gota/gota/dataframe"
 )
 
 //RemoveDuplicatesUnordered removes duplicates and ignores order
@@ -21,36 +23,37 @@ func RemoveDuplicatesUnordered(elements []string) []string {
 	for key := range encountered {
 		result = append(result, key)
 	}
+
 	return result
 }
 
-//WriteCSV builds the recipe data CSV
-func WriteCSV(filename string, header *[]string, records *[][]string) error {
-	//create csv
-	f, err := os.Create(filename)
+//WriteCSV writes CSV from dataframe
+func WriteCSV(df dataframe.DataFrame, path string) error {
+	log.Println("Writing CSV...")
+
+	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	w := csv.NewWriter(f)
-
-	if err := w.Write(*header); err != nil {
-		return errors.Wrap(err, "error writing headers to csv")
-	}
-
-	for _, record := range *records {
-		if err := w.Write(record); err != nil {
-			return errors.Wrap(err, "error writing record to csv")
-		}
-	}
-
-	// Write any buffered data to the underlying writer (standard output).
-	w.Flush()
-
-	if err := w.Error(); err != nil {
+	if err := df.WriteCSV(f); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+//LoadCSV loads data from on disk CSV as dataframe
+func LoadCSV(path string) dataframe.DataFrame {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	df := dataframe.ReadCSV(strings.NewReader(string(content)),
+		dataframe.WithDelimiter(','),
+		dataframe.HasHeader(true))
+
+	return df
 }
