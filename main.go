@@ -6,9 +6,10 @@ func main() {
 	recipes := LoadCSV(recipesCSVPath)
 
 	//Generate
-	_, _ = LoadUsersData(5, recipes, true)
+	users, orders := LoadUsersData(20000, recipes, true)
 	// users := LoadCSV(usersCSVPath)
 	// orders := LoadCSV(ordersCSVPath)
 
 	//Recommend
+	BPRRecommender(orders, users, recipes)
 }

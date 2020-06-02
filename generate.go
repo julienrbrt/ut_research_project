@@ -19,7 +19,6 @@ const ordersCSVPath = "data/orders_data.csv"
 type User struct {
 	ID              int
 	Name            string
-	Age             int
 	Latitude        float64
 	Longitude       float64
 	FoodPreferences []string
@@ -40,7 +39,7 @@ const maxLongitudeNL = 7.8929
 
 //generateUsers generates user data
 func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
-	var result GeneratedUsers
+	var users GeneratedUsers
 	var err error
 
 	//build tags list
@@ -57,11 +56,12 @@ func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
 	}
 
 	for i := 0; i < n; i++ {
+		log.Printf("Generating user %d / %d...\n", i+1, n)
+
 		var user User
 
-		user.ID = i
+		user.ID = i + 1
 		user.Name = gofakeit.Name()
-		user.Age = gofakeit.Number(18, 70)
 		user.Latitude, err = gofakeit.LatitudeInRange(minLatitudeNL, maxLatitudeNL)
 		if err != nil {
 			return GeneratedUsers{}, err
@@ -73,16 +73,16 @@ func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
 
 		//random food preferences (aka tags)
 		randomTags := rand.Perm(len(tags))
-		// assumption that a meal-sharing user will not enter more than 8 tags
-		randomNb := rand.Intn(8)
+		// assumption that a meal-sharing user will not enter more than 10 tags
+		randomNb := rand.Intn(10) + 1
 		//get subset of tags preferences
 		for i := 0; i < randomNb; i++ {
 			user.FoodPreferences = append(user.FoodPreferences, tags[randomTags[i]])
 		}
 
 		//random number of orders that match food preferences
-		//assumption that a meal-sharing user will not have more than 35 orders
-		randomNb = rand.Intn(35)
+		//assumption that a meal-sharing user will not have more than 54 orders
+		randomNb = rand.Intn(50) + 5
 
 		//match recipe of user food prefrences
 		var filterRecipes []dataframe.F
@@ -106,28 +106,19 @@ func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
 				continue
 			}
 
-			//add recipes that user bought and didn't match its taste
-			if rand.Intn(100) >= 85 {
-				orderID = rand.Intn(df.Nrow())
-				//randomness give us a recipes out of bound, skip this iteration
-				if orderID == 0 || orderID >= len(matchingRecipes) {
-					continue
-				}
-			}
-
 			user.OrdersHistory = append(user.OrdersHistory, orderID)
 		}
 
 		//random rating from order history, matching mean rating of the recipe
 		for range user.OrdersHistory {
-			//we generate rating that includes 0 as we consider those grades as recipe unrated
-			user.OrdersRating = append(user.OrdersRating, rand.Intn(5))
+			//we generate order rating
+			user.OrdersRating = append(user.OrdersRating, rand.Intn(5)+1)
 		}
 
-		result.Users = append(result.Users, user)
+		users.Users = append(users.Users, user)
 	}
 
-	return result, nil
+	return users, nil
 }
 
 //asUserDf converts a list of user as a dataframe
@@ -145,7 +136,6 @@ func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 		data := []string{
 			strconv.Itoa(user.ID),
 			user.Name,
-			strconv.Itoa(user.Age),
 			fmt.Sprintf("%f", user.Latitude),
 			fmt.Sprintf("%f", user.Longitude),
 		}

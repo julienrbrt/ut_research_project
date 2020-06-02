@@ -44,7 +44,7 @@ func (recipes *AHRecipes) asRecipesDf() (dataframe.DataFrame, error) {
 	for i, recipe := range recipes.Recipes {
 		//fill in data
 		data := []string{
-			strconv.Itoa(i),
+			strconv.Itoa(i + 1),
 			recipe.Title,
 			strconv.Itoa(recipe.CookTime + recipe.OvenTime + recipe.WaitTime),
 			strconv.Itoa(recipe.Rating.AverageRating),

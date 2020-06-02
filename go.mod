@@ -12,6 +12,7 @@ require (
 	github.com/go-gota/gota v0.10.1
 	github.com/gocolly/colly/v2 v2.0.1
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/zhenghaoz/gorse v0.1.3
 	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
 	gonum.org/v1/gonum v0.7.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
