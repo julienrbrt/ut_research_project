@@ -73,15 +73,15 @@ func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
 
 		//random food preferences (aka tags)
 		randomTags := rand.Perm(len(tags))
-		// assumption that a meal-sharing user will not enter more than 10 tags
-		randomNb := rand.Intn(10) + 1
+		// assumption that a meal-sharing user will not enter more than 12 tags
+		randomNb := rand.Intn(12)
 		//get subset of tags preferences
 		for i := 0; i < randomNb; i++ {
 			user.FoodPreferences = append(user.FoodPreferences, tags[randomTags[i]])
 		}
 
 		//random number of orders that match food preferences
-		//assumption that a meal-sharing user will not have more than 54 orders
+		//assumption that a meal-sharing user will not have more than 55 orders
 		randomNb = rand.Intn(50) + 5
 
 		//match recipe of user food prefrences
@@ -125,7 +125,7 @@ func generateUsers(n int, df dataframe.DataFrame) (GeneratedUsers, error) {
 func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 	log.Println("Processing...")
 
-	headers := []string{"id", "name", "age", "latitude", "longitude"}
+	headers := []string{"id", "name", "latitude", "longitude"}
 	records := [][]string{}
 
 	//append tags to headers
@@ -157,6 +157,8 @@ func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 
 		records = append(records, data)
 	}
+
+	fmt.Println(headers)
 
 	//load as dataframe
 	df := dataframe.LoadRecords(append([][]string{headers}, records...))
