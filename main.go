@@ -6,7 +6,7 @@ func main() {
 	recipes := LoadCSV(recipesCSVPath)
 
 	//Generate
-	users, orders := LoadUsersData(20000, recipes, true)
+	users, orders := LoadUsersData(50000, recipes, true)
 	// users := LoadCSV(usersCSVPath)
 	// orders := LoadCSV(ordersCSVPath)
 

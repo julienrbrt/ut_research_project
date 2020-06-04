@@ -158,8 +158,6 @@ func (users *GeneratedUsers) asUserDf(tags []string) dataframe.DataFrame {
 		records = append(records, data)
 	}
 
-	fmt.Println(headers)
-
 	//load as dataframe
 	df := dataframe.LoadRecords(append([][]string{headers}, records...))
 
