@@ -9,7 +9,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-const recipesCSVPath = "data/item_recipes.csv"
+const recipesCSVPath = "data/recipes.csv"
 
 //asRecipesDf converts a list of recipes as a dataframe
 func (recipes *AHRecipes) asRecipesDf() (dataframe.DataFrame, error) {
