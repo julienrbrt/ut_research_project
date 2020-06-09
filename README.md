@@ -15,4 +15,3 @@ All generated data is applicable to resident of the Netherlands.
 * [Colly](https://github.com/gocolly/colly)
 * [GoFakeIt](https://github.com/brianvoe/gofakeit)
 * [Gota](https://github.com/go-gota/gota)
-* [Gorse](https://github.com/zhenghaoz/gorse)

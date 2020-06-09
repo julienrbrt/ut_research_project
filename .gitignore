@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-ut_research_project
 data/
 
 # Test binary, built with `go test -c`
