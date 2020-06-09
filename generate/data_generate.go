@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"path"
 	"regexp"
 	"strconv"
 
@@ -11,13 +12,14 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/julienrbrt/ut_research_project/util"
+	"github.com/kardianos/osext"
 )
 
 //UsersCSVPath CSV path of the dataset users
-const UsersCSVPath = "../data/users.csv"
+const UsersCSVPath = "data/users.csv"
 
 //OrdersCSVPath CSV path of the dataset orders
-const OrdersCSVPath = "../data/orders.csv"
+const OrdersCSVPath = "data/orders.csv"
 
 //User contains the food preferences data of an user
 type User struct {
@@ -220,13 +222,19 @@ func UsersData(n int, recipes dataframe.DataFrame, writeCSV bool) error {
 	ordersDF := users.transformToOrderDF()
 
 	if writeCSV {
+		//get executable flolder
+		ef, err := osext.ExecutableFolder()
+		if err != nil {
+			return err
+		}
+
 		//save user csv
-		if err := util.WriteCSV(usersDF, UsersCSVPath); err != nil {
+		if err := util.WriteCSV(usersDF, path.Join(ef, UsersCSVPath)); err != nil {
 			return err
 		}
 
 		//save order csv
-		if err := util.WriteCSV(ordersDF, OrdersCSVPath); err != nil {
+		if err := util.WriteCSV(ordersDF, path.Join(ef, OrdersCSVPath)); err != nil {
 			return err
 		}
 	}

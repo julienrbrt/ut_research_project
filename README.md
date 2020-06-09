@@ -5,10 +5,10 @@ All generated data is applicable to resident of the Netherlands.
 
 ## Flow
 
-* Scrape
-* Process
-* Generate
-* Recommend
+* Scrape (with `olive`)
+* Process (with `olive`)
+* Generate (with `olive`)
+* Recommend (with `poireau`)
 
 ## Useful Documentation
 

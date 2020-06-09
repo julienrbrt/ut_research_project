@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/gocolly/colly/v2"
 	"github.com/julienrbrt/ut_research_project/util"
+	"github.com/kardianos/osext"
 )
 
 //Recipe contains a recipe data from AH Allerhande website
@@ -65,7 +67,7 @@ type Recipes struct {
 }
 
 //RecipesCSVPath CSV path of the dataset recipes
-const RecipesCSVPath = "../data/recipes.csv"
+const RecipesCSVPath = "data/recipes.csv"
 
 //ScrapeAH scrapes a recipe from Albert Heijn Allerhande website
 func (r *Recipe) ScrapeAH(recipeURL string) {
@@ -331,8 +333,14 @@ func RecipesData(n int, writeCSV bool) (dataframe.DataFrame, error) {
 	}
 
 	if writeCSV {
+		//get executable flolder
+		ef, err := osext.ExecutableFolder()
+		if err != nil {
+			return dataframe.DataFrame{}, err
+		}
+
 		//save order csv
-		if err := util.WriteCSV(df, RecipesCSVPath); err != nil {
+		if err := util.WriteCSV(df, path.Join(ef, RecipesCSVPath)); err != nil {
 			return dataframe.DataFrame{}, err
 		}
 	}
