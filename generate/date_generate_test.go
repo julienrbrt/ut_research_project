@@ -5,14 +5,16 @@ import (
 
 	"github.com/brianvoe/gofakeit/v5"
 	"github.com/julienrbrt/ut_research_project/recipe"
-	"github.com/julienrbrt/ut_research_project/util"
 )
 
 func TestGenerateUsers(t *testing.T) {
 	//set seed
 	gofakeit.Seed(42)
 
-	recipes := util.LoadCSV(recipe.RecipesCSVPath)
+	recipes, err := recipe.RecipesData(15, false)
+	if err != nil {
+		panic(err)
+	}
 	users, err := generateUsers(15, recipes)
 	if err != nil {
 		panic(err)
