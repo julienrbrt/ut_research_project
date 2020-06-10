@@ -11,7 +11,7 @@ func TestGenerateUsers(t *testing.T) {
 	//set seed
 	gofakeit.Seed(42)
 
-	recipes, err := recipe.RecipesData(15, false)
+	recipes, err := recipe.RecipesData(15, "")
 	if err != nil {
 		panic(err)
 	}

@@ -9,12 +9,12 @@ import (
 
 func main() {
 	//Scrape recipes
-	recipes, err := recipe.RecipesData(5000, true)
+	recipes, err := recipe.RecipesData(5000, "data/orders.csv")
 	if err != nil {
 		log.Fatalln(err)
 	}
 	//Generate user data
-	err = generate.UsersData(50000, recipes, true)
+	err = generate.UsersData(50000, recipes, "data/users.csv")
 	if err != nil {
 		log.Fatalln(err)
 	}
