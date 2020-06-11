@@ -24,39 +24,8 @@ type Recipe struct {
 	CookTime        int `json:"cookTime"`
 	OvenTime        int `json:"ovenTime"`
 	WaitTime        int `json:"waitTime"`
-	Rating          struct {
-		AverageRating   int `json:"averageRating"`
-		NumberOfRatings int `json:"numberOfRatings"`
-	} `json:"rating"`
-	Nutritions struct {
-		SATURATEDFAT struct {
-			Name  string  `json:"name"`
-			Unit  string  `json:"unit"`
-			Value float32 `json:"value"`
-		} `json:"SATURATED_FAT"`
-		ENERGY struct {
-			Name  string  `json:"name"`
-			Unit  string  `json:"unit"`
-			Value float32 `json:"value"`
-		} `json:"ENERGY"`
-		PROTEIN struct {
-			Name  string  `json:"name"`
-			Unit  string  `json:"unit"`
-			Value float32 `json:"value"`
-		} `json:"PROTEIN"`
-		FAT struct {
-			Name  string  `json:"name"`
-			Unit  string  `json:"unit"`
-			Value float32 `json:"value"`
-		} `json:"FAT"`
-		CARBOHYDRATES struct {
-			Name  string  `json:"name"`
-			Unit  string  `json:"unit"`
-			Value float32 `json:"value"`
-		} `json:"CARBOHYDRATES"`
-	} `json:"nutritions"`
-	ImageURL string
-	URL      string `json:"href"`
+	ImageURL        string
+	URL             string `json:"href"`
 }
 
 //Recipes contains a recipe list from AH
@@ -149,7 +118,7 @@ func (recipes *Recipes) transformToDF() (dataframe.DataFrame, error) {
 	log.Println("Processing...")
 
 	var err error
-	headers := []string{"id", "title", "totalTime", "averageRating", "numberOfRatings", "imageURL", "URL"}
+	headers := []string{"id", "title", "totalTime", "imageURL", "URL"}
 	records := [][]string{}
 
 	//add all tags and ingredients from recipes
@@ -180,8 +149,6 @@ func (recipes *Recipes) transformToDF() (dataframe.DataFrame, error) {
 			strconv.Itoa(i + 1),
 			recipe.Title,
 			strconv.Itoa(recipe.CookTime + recipe.OvenTime + recipe.WaitTime),
-			strconv.Itoa(recipe.Rating.AverageRating),
-			strconv.Itoa(recipe.Rating.NumberOfRatings),
 			recipe.ImageURL,
 			recipe.URL,
 		}
