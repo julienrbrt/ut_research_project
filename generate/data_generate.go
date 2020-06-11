@@ -41,11 +41,7 @@ func generateUsers(n int, recipes dataframe.DataFrame) (GeneratedUsers, error) {
 	var err error
 
 	//build tags list
-	reg, err := regexp.Compile("tag_")
-	if err != nil {
-		return GeneratedUsers{}, err
-	}
-
+	reg := regexp.MustCompile("tag_")
 	tags := make(map[int]string)
 	for i, t := range recipes.Names() {
 		if reg.MatchString(t) {
@@ -56,10 +52,11 @@ func generateUsers(n int, recipes dataframe.DataFrame) (GeneratedUsers, error) {
 	for i := 0; i < n; i++ {
 		log.Printf("Generating user %d / %d...\n", i+1, n)
 
-		var user User
+		user := User{
+			ID:   i + 1,
+			Name: gofakeit.Name(),
+		}
 
-		user.ID = i + 1
-		user.Name = gofakeit.Name()
 		user.Latitude, err = gofakeit.LatitudeInRange(minLatitudeNL, maxLatitudeNL)
 		if err != nil {
 			return GeneratedUsers{}, err
@@ -75,26 +72,28 @@ func generateUsers(n int, recipes dataframe.DataFrame) (GeneratedUsers, error) {
 		randomNb := rand.Intn(12)
 		//get subset of tags preferences
 		for i := 0; i < randomNb; i++ {
-			user.FoodPreferences = append(user.FoodPreferences, tags[randomTags[i]])
+			if val, ok := tags[randomTags[i]]; ok {
+				user.FoodPreferences = append(user.FoodPreferences, val)
+			}
 		}
-
-		//random number of orders that match food preferences
-		//assumption that a meal-sharing user will not have more than 55 orders
-		randomNb = rand.Intn(50) + 5
 
 		//match recipe of user food prefrences
 		var filterRecipes []dataframe.F
 		for _, f := range user.FoodPreferences {
 			filterRecipes = append(filterRecipes, dataframe.F{Colname: f, Comparator: series.Eq, Comparando: "1"})
 		}
-		matchingRecipes := recipes.Copy().Filter(filterRecipes...).Records()
+		matchingRecipes := recipes.Filter(filterRecipes...).Records()
+
+		//random number of orders that match food preferences
+		//assumption that a meal-sharing user will not have more than 50 orders
+		randomNb = rand.Intn(50) + 1
 
 		//add recipes matching user taste
 		for i := 0; i < randomNb; i++ {
 			//random index
-			index := rand.Intn(randomNb)
-			//randomness give us a recipes out of bound, skip this iteration
-			if index == 0 || index >= len(matchingRecipes) {
+			index := rand.Intn(randomNb) + 1
+			//randomness give us a recipe out of bound, skip this iteration
+			if index >= len(matchingRecipes) {
 				continue
 			}
 
@@ -110,7 +109,7 @@ func generateUsers(n int, recipes dataframe.DataFrame) (GeneratedUsers, error) {
 		//keep only the unique orders id
 		user.OrdersHistory = util.Unique(user.OrdersHistory)
 
-		//random rating from order history, matching mean rating of the recipe
+		//random rating from order history
 		for range user.OrdersHistory {
 			//we generate order rating
 			user.OrdersRating = append(user.OrdersRating, rand.Intn(5)+1)

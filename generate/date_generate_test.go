@@ -5,6 +5,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v5"
 	"github.com/julienrbrt/ut_research_project/recipe"
+	"github.com/julienrbrt/ut_research_project/util"
 )
 
 func TestGenerateUsers(t *testing.T) {
@@ -38,6 +39,12 @@ func TestGenerateUsers(t *testing.T) {
 		}
 		if u.Longitude < minLongitudeNL {
 			t.Errorf("Latidude is incorrect, got '%v', shoud be minimum '%v'", u.Longitude, minLongitudeNL)
+		}
+		if len(util.RemoveDuplicatesUnordered(u.FoodPreferences)) != len(u.FoodPreferences) {
+			t.Error("FoodPreferences are incorrect with mismatched length")
+		}
+		if len(util.Unique(u.OrdersHistory)) != len(u.OrdersHistory) {
+			t.Error("OrdersHistory is incorrect with mismatched length")
 		}
 	}
 }

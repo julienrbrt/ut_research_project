@@ -12,7 +12,7 @@ import (
 
 //tool arguments
 //userID to which user to get recommendations
-//maxDistance define the maximal distance for which users are considered neighboors
+//maxDistance define the maximal distance for which users are considered neighbors
 func main() {
 	//get arguments
 	args := os.Args
@@ -40,9 +40,11 @@ func main() {
 	recipes := util.LoadCSV("data/recipes.csv")
 
 	///collaborative filtering
+
+	//filter by neighbors users
 	users = recommend.UsersCloseByXKm(userID, maxDistance, users)
 
-	//cotent filtering
+	///content filtering
 
 	//create user profile
 	_ = recommend.UserProfile(userID, orders)
