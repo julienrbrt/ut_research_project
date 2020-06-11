@@ -107,6 +107,9 @@ func generateUsers(n int, recipes dataframe.DataFrame) (GeneratedUsers, error) {
 			user.OrdersHistory = append(user.OrdersHistory, orderID)
 		}
 
+		//keep only the unique orders id
+		user.OrdersHistory = util.Unique(user.OrdersHistory)
+
 		//random rating from order history, matching mean rating of the recipe
 		for range user.OrdersHistory {
 			//we generate order rating
@@ -189,7 +192,7 @@ func (users *GeneratedUsers) transformToOrderDF() dataframe.DataFrame {
 }
 
 //UsersData generate N user data
-func UsersData(n int, recipes dataframe.DataFrame, csvPath string) error {
+func UsersData(n int, recipes dataframe.DataFrame, csvPathUsers, csvPathOrders string) error {
 	//generate data
 	users, err := generateUsers(n, recipes)
 	if err != nil {
@@ -213,14 +216,16 @@ func UsersData(n int, recipes dataframe.DataFrame, csvPath string) error {
 	usersDF := users.transformToUserDF(tags)
 	ordersDF := users.transformToOrderDF()
 
-	if csvPath != "" {
-		//save user csv
-		if err := util.WriteCSV(usersDF, csvPath); err != nil {
+	//save user csv
+	if csvPathUsers != "" {
+		if err := util.WriteCSV(usersDF, csvPathUsers); err != nil {
 			return err
 		}
+	}
 
-		//save order csv
-		if err := util.WriteCSV(ordersDF, csvPath); err != nil {
+	//save order csv
+	if csvPathOrders != "" {
+		if err := util.WriteCSV(ordersDF, csvPathOrders); err != nil {
 			return err
 		}
 	}

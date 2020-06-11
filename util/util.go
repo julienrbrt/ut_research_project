@@ -27,9 +27,22 @@ func RemoveDuplicatesUnordered(elements []string) []string {
 	return result
 }
 
+//Unique returns a unique slice
+func Unique(intSlice []int) []int {
+	keys := make(map[int]bool)
+	list := []int{}
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 //WriteCSV writes CSV from dataframe
 func WriteCSV(df dataframe.DataFrame, path string) error {
-	log.Println("Writing CSV...")
+	log.Printf("Writing CSV in %s...\n", path)
 
 	f, err := os.Create(path)
 	if err != nil {

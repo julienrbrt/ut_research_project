@@ -14,7 +14,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	//Generate user data
-	err = generate.UsersData(50000, recipes, "data/users.csv")
+	err = generate.UsersData(1000, recipes, "data/users.csv", "data/orders.csv")
 	if err != nil {
 		log.Fatalln(err)
 	}
