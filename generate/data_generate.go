@@ -168,7 +168,7 @@ func (users *GeneratedUsers) transformToUserDF(tags []string) dataframe.DataFram
 func (users *GeneratedUsers) transformToOrderDF() dataframe.DataFrame {
 	log.Println("Processing...")
 
-	headers := []string{"user_id", "order_id", "rating"}
+	headers := []string{"user_id", "recipe_id", "rating"}
 	records := [][]string{}
 
 	for _, user := range users.Users {
