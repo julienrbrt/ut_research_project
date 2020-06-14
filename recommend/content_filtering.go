@@ -142,6 +142,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error
 			return nil, err
 		}
 
+		log.Printf("%d / %d recipes cosine similarity calculated\n", i, recipes.Nrow())
 		similarity = append(similarity, map[int][]int{recipeID: orderedRecipes})
 	}
 
