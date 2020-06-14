@@ -42,14 +42,16 @@ func usersCloseByXKm(usersID int, km float64, users dataframe.DataFrame) datafra
 
 var models = []core.ModelInterface{
 	//BaseLine
-	model.NewBaseLine(nil),
+	model.NewBaseLine(base.Params{
+		base.NEpochs: 1000,
+	}),
 	// SlopOne
 	model.NewSlopOne(nil),
 	// CoClustering
 	model.NewCoClustering(base.Params{
 		base.NUserClusters: 5,
 		base.NItemClusters: 3,
-		base.NEpochs:       20,
+		base.NEpochs:       1000,
 	}),
 	// KNN
 	model.NewKNN(base.Params{
@@ -61,7 +63,7 @@ var models = []core.ModelInterface{
 	}),
 	// SVD
 	model.NewSVD(base.Params{
-		base.NEpochs:    100,
+		base.NEpochs:    1000,
 		base.Reg:        0.1,
 		base.Lr:         0.01,
 		base.NFactors:   50,
@@ -70,7 +72,7 @@ var models = []core.ModelInterface{
 	}),
 	//SVD++
 	model.NewSVDpp(base.Params{
-		base.NEpochs:    100,
+		base.NEpochs:    1000,
 		base.Reg:        0.05,
 		base.Lr:         0.005,
 		base.NFactors:   50,
@@ -86,7 +88,7 @@ var models = []core.ModelInterface{
 		base.NFactors:   10,
 		base.Reg:        0.01,
 		base.Lr:         0.05,
-		base.NEpochs:    100,
+		base.NEpochs:    1000,
 		base.InitMean:   0,
 		base.InitStdDev: 0.001,
 	}),
@@ -95,13 +97,13 @@ var models = []core.ModelInterface{
 		base.NFactors: 20,
 		base.Reg:      0.015,
 		base.Alpha:    1.0,
-		base.NEpochs:  10,
+		base.NEpochs:  1000,
 	}),
 }
 
 //WithCollaborativeFiltering recommends recipes using collaborative filtering
 func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) error {
-	log.Printf("Recommending Recipes for user %d", userID)
+	log.Printf("(Collaborative Filtering) Recommending Recipes for user %d", userID)
 
 	//filter users table by neighbors users
 	users = usersCloseByXKm(userID, km, users)

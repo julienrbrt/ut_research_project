@@ -1,15 +1,19 @@
 package recommend
 
 import (
+	"log"
 	"math"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
+	"github.com/julienrbrt/ut_research_project/util"
 )
 
-//UserProfile returns a dataframe containing orders and their normalized rating
-func UserProfile(userID int, orders, recipes dataframe.DataFrame) dataframe.DataFrame {
+//userProfileOrder returns a dataframe containing orders and their normalized rating
+func userProfileOrder(userID int, orders, recipes dataframe.DataFrame) dataframe.DataFrame {
 	//filter the matching user
 	normalizedOrders := orders.
 		Filter(dataframe.F{Colname: "user_id", Comparator: series.Eq, Comparando: userID})
@@ -40,8 +44,8 @@ func UserProfile(userID int, orders, recipes dataframe.DataFrame) dataframe.Data
 	return normalizedOrders
 }
 
-//UserTagsWeight will use the UserProfile output to generate the recipes tags weight based on the ratings of each recipes using that tag
-func UserTagsWeight(orders dataframe.DataFrame) map[string]float64 {
+//userTagsWeight will use the UserProfile output to generate the recipes tags weight based on the ratings of each recipes using that tag
+func userTagsWeight(orders dataframe.DataFrame) map[string]float64 {
 	weight := make(map[string]float64)
 	for _, n := range orders.Names() {
 		if strings.Contains(n, "tag_") {
@@ -61,15 +65,106 @@ func UserTagsWeight(orders dataframe.DataFrame) map[string]float64 {
 	return weight
 }
 
-//WithContentFiltering recommends recipes using content filtering
-func WithContentFiltering() {
+//recipeCosineSimilarity calculates the cosine similarity of each recipes with each other
+//Retuns the recipes id and their most similar recipes (sorted)
+//CosineSimilarityRecipes uses tags and recipes ingredient
+func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error) {
+	//keep only relevant columns
+	var columnsToDrop []string
+	for _, n := range recipes.Names() {
+		//keep only orders columns and recipes tags
+		if n != "id" && !strings.Contains(n, "tag_") && !strings.Contains(n, "ingredient_") {
+			columnsToDrop = append(columnsToDrop, n)
+		}
+	}
+	recipes = recipes.Drop(columnsToDrop)
 
+	similarity := make([]map[int][]int, recipes.Nrow())
+	//unefficient but working
+	for i, recipe := range recipes.Records() {
+		//skip dataframe headers
+		if i == 0 {
+			continue
+		}
+
+		r, err := util.SS2SF(recipe[1:])
+		if err != nil {
+			return nil, err
+		}
+
+		//holds the compared recipes id and it's similarity
+		similarTo := make(map[string]float64)
+		for j, compareTo := range recipes.Records() {
+			//skip dataframe headers
+			if j == 0 {
+				continue
+			}
+
+			ct, err := util.SS2SF(compareTo[1:])
+			if err != nil {
+				return nil, err
+			}
+
+			//calculate similarity of the two recipes
+			sim, err := util.CosineSimilarity(r, ct)
+			if err != nil {
+				return nil, err
+			}
+
+			similarTo[compareTo[0]] = sim
+		}
+
+		//sort the most similar recipes
+		type kv struct {
+			Key   string
+			Value float64
+		}
+		var ss []kv
+		for k, v := range similarTo {
+			ss = append(ss, kv{k, v})
+		}
+		sort.Slice(ss, func(i, j int) bool {
+			return ss[i].Value > ss[j].Value
+		})
+
+		var orderedRecipes []int
+		for _, kv := range ss {
+			k, err := strconv.Atoi(kv.Key)
+			if err != nil {
+				return nil, err
+			}
+
+			orderedRecipes = append(orderedRecipes, k)
+		}
+
+		recipeID, err := strconv.Atoi(recipe[0])
+		if err != nil {
+			return nil, err
+		}
+
+		similarity = append(similarity, map[int][]int{recipeID: orderedRecipes})
+	}
+
+	return similarity, nil
 }
 
-///content filtering
+//WithContentFiltering recommends recipes using content filtering
+func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) error {
+	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
 
-//create user profile (normalized ratings with recipes tags)
-// orders = recommend.UserProfile(userID, orders, recipes)
-// fmt.Printf("User %d has made %d orders with a (normalized) average rating of %.2f per order\n", userID, orders.Nrow(), orders.Col("rating").Mean())
+	//user profile
+	orders = userProfileOrder(userID, orders, recipes)
+	log.Printf("User %d has made %d orders with a (normalized) average rating of %.2f per order\n", userID, orders.Nrow(), orders.Col("rating").Mean())
 
-// _ = recommend.UserTagsWeight(orders)
+	//calculate users preference tags weight
+	_ = userTagsWeight(orders)
+
+	//calculate cosine similarity
+	log.Println("Calculating recipes cosine similarity...")
+	_, err := recipeCosineSimilarity(recipes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

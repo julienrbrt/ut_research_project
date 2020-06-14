@@ -41,12 +41,16 @@ func main() {
 	}
 
 	//load datasets
-	fmt.Printf("Loading datasets...\n")
+	log.Printf("Loading datasets...\n")
 	users := util.LoadCSV("data/users.csv")
 	orders := util.LoadCSV("data/orders.csv")
 	recipes := util.LoadCSV("data/recipes.csv")
 
 	//content filtering
+	err = recommend.WithContentFiltering(userID, nbRecipes, users, orders, recipes)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	//collaborative filtering
 	err = recommend.WithCollaborativeFiltering(userID, nbRecipes, maxDistance, users, orders, recipes)

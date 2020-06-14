@@ -1,9 +1,12 @@
 package util
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/go-gota/gota/dataframe"
@@ -69,4 +72,58 @@ func LoadCSV(path string) dataframe.DataFrame {
 		dataframe.HasHeader(true))
 
 	return df
+}
+
+//CosineSimilarity calculates the cosine similarity of two values
+func CosineSimilarity(a []float64, b []float64) (cosine float64, err error) {
+	count := 0
+	lengthA := len(a)
+	lengthB := len(b)
+
+	if lengthA > lengthB {
+		count = lengthA
+	} else {
+		count = lengthB
+	}
+
+	sumA := 0.0
+	s1 := 0.0
+	s2 := 0.0
+
+	for k := 0; k < count; k++ {
+
+		if k >= lengthA {
+			s2 += b[k] * b[k]
+			continue
+		}
+
+		if k >= lengthB {
+			s1 += a[k] * a[k]
+			continue
+		}
+
+		sumA += a[k] * b[k]
+		s1 += a[k] * a[k]
+		s2 += b[k] * b[k]
+	}
+
+	if s1 == 0 || s2 == 0 {
+		return 0.0, errors.New("Vectors should not be null (all zeros)")
+	}
+
+	return sumA / (math.Sqrt(s1) * math.Sqrt(s2)), nil
+}
+
+//SS2SF convers a String Slice to a String Float
+func SS2SF(values []string) ([]float64, error) {
+	slice := []float64{}
+	for i := range values {
+		f, err := strconv.ParseFloat(values[i], 64)
+		if err != nil {
+			return nil, err
+		}
+		slice = append(slice, f)
+	}
+
+	return slice, nil
 }
