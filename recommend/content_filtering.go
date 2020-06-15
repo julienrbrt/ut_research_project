@@ -13,6 +13,7 @@ import (
 )
 
 //userProfileOrder returns a dataframe containing orders and their normalized rating
+//appends as well the tags description columns to the orders dataframe
 func userProfileOrder(userID int, orders, recipes dataframe.DataFrame) dataframe.DataFrame {
 	//filter the matching user
 	normalizedOrders := orders.
@@ -65,10 +66,15 @@ func userTagsWeight(orders dataframe.DataFrame) map[string]float64 {
 	return weight
 }
 
+type kv struct {
+	Key   string
+	Value float64
+}
+
 //recipeCosineSimilarity calculates the cosine similarity of each recipes with each other
 //Retuns the recipes id and their most similar recipes (sorted)
 //CosineSimilarityRecipes uses tags and recipes ingredient
-func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error) {
+func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) {
 	//keep only relevant columns
 	var columnsToDrop []string
 	for _, n := range recipes.Names() {
@@ -79,7 +85,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error
 	}
 	recipes = recipes.Drop(columnsToDrop)
 
-	similarity := make([]map[int][]int, recipes.Nrow())
+	similarity := make(map[int][]int, recipes.Nrow())
 	//unefficient but working
 	for i, recipe := range recipes.Records() {
 		//skip dataframe headers
@@ -95,8 +101,8 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error
 		//holds the compared recipes id and it's similarity
 		similarTo := make(map[string]float64)
 		for j, compareTo := range recipes.Records() {
-			//skip dataframe headers
-			if j == 0 {
+			//skip dataframe headers and identical rows
+			if j == 0 || i == j {
 				continue
 			}
 
@@ -115,10 +121,6 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error
 		}
 
 		//sort the most similar recipes
-		type kv struct {
-			Key   string
-			Value float64
-		}
 		var ss []kv
 		for k, v := range similarTo {
 			ss = append(ss, kv{k, v})
@@ -143,7 +145,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) ([]map[int][]int, error
 		}
 
 		log.Printf("%d / %d recipes cosine similarity calculated\n", i, recipes.Nrow())
-		similarity = append(similarity, map[int][]int{recipeID: orderedRecipes})
+		similarity[recipeID] = orderedRecipes
 	}
 
 	return similarity, nil
@@ -158,13 +160,68 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	log.Printf("User %d has made %d orders with a (normalized) average rating of %.2f per order\n", userID, orders.Nrow(), orders.Col("rating").Mean())
 
 	//calculate users preference tags weight
-	_ = userTagsWeight(orders)
+	tagsWeight := userTagsWeight(orders)
+	//sort the most prefered tags
+	var tw []kv
+	for k, v := range tagsWeight {
+		tw = append(tw, kv{k, v})
+	}
+	sort.Slice(tw, func(i, j int) bool {
+		return tw[i].Value > tw[j].Value
+	})
+
+	var tags []string
+	for _, kv := range tw {
+		tags = append(tags, kv.Key)
+	}
+
+	//recommend from the 3 most liked tags
+	if len(tags) >= 3 {
+		tags = tags[:3]
+	}
+
+	//filter tags
+	var filters []dataframe.F
+	for i := range tags {
+		filters = append(filters, dataframe.F{
+			Colname: tags[i], Comparator: series.Eq, Comparando: "1",
+		})
+	}
+
+	//get placed orders that match that tags and sort by prefered orders (highest rating)
+	orders = orders.FilterAggregation(dataframe.Or, filters...).Arrange(dataframe.RevSort("rating"))
 
 	//calculate cosine similarity
 	log.Println("Calculating recipes cosine similarity...")
-	_, err := recipeCosineSimilarity(recipes)
+	recipeSim, err := recipeCosineSimilarity(recipes)
 	if err != nil {
 		return err
+	}
+
+	//select recipes to recommend
+	recipesIDs, err := orders.Col("recipe_id").Int()
+	if err != nil {
+		return err
+	}
+
+	var recommendItems []int
+	for _, r := range recipesIDs {
+		recommendItems = append(recommendItems, recipeSim[r][:3]...)
+	}
+
+	//set maximum recommended recipes
+	if len(recommendItems) > nbRecipes {
+		recommendItems = recommendItems[:nbRecipes]
+	}
+
+	//get recipes names
+	filters = []dataframe.F{}
+	for _, i := range recommendItems {
+		filters = append(filters, dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: i})
+	}
+	recommendItemsName := recipes.FilterAggregation(dataframe.Or, filters...).Col("title").Records()
+	for i, n := range recommendItemsName {
+		log.Printf("%d/%d Recommend for user(%d) = %v\n", i+1, nbRecipes, userID, n)
 	}
 
 	return nil
