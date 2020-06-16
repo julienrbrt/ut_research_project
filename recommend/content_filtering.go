@@ -71,10 +71,15 @@ type kv struct {
 	Value float64
 }
 
+type sim struct {
+	RecipeID  int
+	SimilarTo string
+}
+
 //recipeCosineSimilarity calculates the cosine similarity of each recipes with each other
-//Retuns the recipes id and their most similar recipes (sorted)
+//Retuns the recipes id and their most similar recipes (sorted by most relevant first)
 //CosineSimilarityRecipes uses tags and recipes ingredient
-func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) {
+func recipeCosineSimilarity(recipes dataframe.DataFrame) (dataframe.DataFrame, error) {
 	//keep only relevant columns
 	var columnsToDrop []string
 	for _, n := range recipes.Names() {
@@ -85,7 +90,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) 
 	}
 	recipes = recipes.Drop(columnsToDrop)
 
-	similarity := make(map[int][]int, recipes.Nrow())
+	similarities := []sim{}
 	//unefficient but working
 	for i, recipe := range recipes.Records() {
 		//skip dataframe headers
@@ -95,7 +100,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) 
 
 		r, err := util.SS2SF(recipe[1:])
 		if err != nil {
-			return nil, err
+			return dataframe.DataFrame{}, err
 		}
 
 		//holds the compared recipes id and it's similarity
@@ -108,13 +113,13 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) 
 
 			ct, err := util.SS2SF(compareTo[1:])
 			if err != nil {
-				return nil, err
+				return dataframe.DataFrame{}, err
 			}
 
 			//calculate similarity of the two recipes
 			sim, err := util.CosineSimilarity(r, ct)
 			if err != nil {
-				return nil, err
+				return dataframe.DataFrame{}, err
 			}
 
 			similarTo[compareTo[0]] = sim
@@ -129,26 +134,23 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (map[int][]int, error) 
 			return ss[i].Value > ss[j].Value
 		})
 
-		var orderedRecipes []int
+		//should be better to be saved in []int but this would not support a dataframe
+		var orderedRecipes string
 		for _, kv := range ss {
-			k, err := strconv.Atoi(kv.Key)
-			if err != nil {
-				return nil, err
-			}
-
-			orderedRecipes = append(orderedRecipes, k)
+			orderedRecipes = orderedRecipes + " " + kv.Key
 		}
+		orderedRecipes = strings.Trim(orderedRecipes, " ")
 
 		recipeID, err := strconv.Atoi(recipe[0])
 		if err != nil {
-			return nil, err
+			return dataframe.DataFrame{}, err
 		}
 
 		log.Printf("%d / %d recipes cosine similarity calculated\n", i, recipes.Nrow())
-		similarity[recipeID] = orderedRecipes
+		similarities = append(similarities, sim{RecipeID: recipeID, SimilarTo: orderedRecipes})
 	}
 
-	return similarity, nil
+	return dataframe.LoadStructs(similarities), nil
 }
 
 //WithContentFiltering recommends recipes using content filtering
@@ -193,10 +195,11 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 
 	//calculate cosine similarity
 	log.Println("Calculating recipes cosine similarity...")
-	recipeSim, err := recipeCosineSimilarity(recipes)
-	if err != nil {
-		return err
-	}
+	// recipesSim, err := recipeCosineSimilarity(recipes)
+	// if err != nil {
+	// 	return err
+	// }
+	recipesSim := util.LoadCSV("data/recipes_sim.csv")
 
 	//select recipes to recommend
 	recipesIDs, err := orders.Col("recipe_id").Int()
@@ -204,9 +207,13 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 		return err
 	}
 
-	var recommendItems []int
+	var recommendItems []string
 	for _, r := range recipesIDs {
-		recommendItems = append(recommendItems, recipeSim[r][:3]...)
+		match := recipesSim.
+			Filter(dataframe.F{Colname: "RecipeID", Comparator: series.Eq, Comparando: r}).
+			Col("SimilarTo").
+			String()
+		recommendItems = append(recommendItems, strings.Split(match, " ")[:3]...)
 	}
 
 	//set maximum recommended recipes
@@ -221,7 +228,7 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	}
 	recommendItemsName := recipes.FilterAggregation(dataframe.Or, filters...).Col("title").Records()
 	for i, n := range recommendItemsName {
-		log.Printf("%d/%d Recommend for user(%d) = %v\n", i+1, nbRecipes, userID, n)
+		log.Printf("%d/%d Recommend for user(%d) = [%s] %v\n", i+1, nbRecipes, userID, recommendItems[i], n)
 	}
 
 	return nil
