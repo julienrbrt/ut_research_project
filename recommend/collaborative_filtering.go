@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -102,7 +103,7 @@ var models = []core.ModelInterface{
 }
 
 //WithCollaborativeFiltering recommends recipes using collaborative filtering
-func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) error {
+func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) (map[string][]string, error) {
 	log.Printf("(Collaborative Filtering) Recommending Recipes for user %d", userID)
 
 	//filter users table by neighbors users
@@ -111,7 +112,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	orders = orders.InnerJoin(users.Copy().Rename("user_id", "id"), "user_id")
 
 	if orders.Nrow() == 0 {
-		return errors.New("No neighbors users, sellability is then not taken in account")
+		return nil, errors.New("No neighbors users, sellability is then not taken in account")
 	}
 	log.Printf("All (neighbors) users are in number of %d and have made %d orders\n", users.Nrow(), orders.Nrow())
 
@@ -144,16 +145,6 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 			fmt.Sprintf("%.5f", scoresRating[1]),  //mae@NbRecipes
 			fmt.Sprintf("%v", recommendItems),
 		})
-
-		//get recipes names
-		var filters []dataframe.F
-		for _, i := range recommendItems {
-			filters = append(filters, dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: i})
-		}
-		recommendItemsName := recipes.FilterAggregation(dataframe.Or, filters...).Col("title").Records()
-		for i, n := range recommendItemsName {
-			log.Printf("%d/%d Recommend for user(%d) = %v\n", i+1, nbRecipes, userID, n)
-		}
 	}
 
 	//print table
@@ -165,5 +156,10 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	}
 	table.Render()
 
-	return nil
+	recommendItems := make(map[string][]string, len(lines))
+	for _, l := range lines {
+		recommendItems[l[0]] = strings.Split(strings.Trim(l[5], "[ ]"), " ")
+	}
+
+	return recommendItems, nil
 }

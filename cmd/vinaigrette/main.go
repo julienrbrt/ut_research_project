@@ -47,14 +47,16 @@ func main() {
 	recipes := util.LoadCSV("data/recipes.csv")
 
 	//content filtering
-	err = recommend.WithContentFiltering(userID, nbRecipes, users, orders, recipes)
+	rconf, err := recommend.WithContentFiltering(userID, nbRecipes, users, orders, recipes)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	fmt.Println(rconf)
 
 	//collaborative filtering
-	err = recommend.WithCollaborativeFiltering(userID, nbRecipes, maxDistance, users, orders, recipes)
+	rcolf, err := recommend.WithCollaborativeFiltering(userID, nbRecipes, maxDistance, users, orders, recipes)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	fmt.Println(rcolf)
 }

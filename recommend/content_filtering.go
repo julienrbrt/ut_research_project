@@ -1,8 +1,10 @@
 package recommend
 
 import (
+	"fmt"
 	"log"
 	"math"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/julienrbrt/ut_research_project/util"
+	"github.com/olekukonko/tablewriter"
 )
 
 //userProfileOrder returns a dataframe containing orders and their normalized rating
@@ -154,7 +157,8 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (dataframe.DataFrame, e
 }
 
 //WithContentFiltering recommends recipes using content filtering
-func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) error {
+//returns the recommended recipes_id
+func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) ([]string, error) {
 	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
 
 	//user profile
@@ -204,7 +208,7 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	//select recipes to recommend
 	recipesIDs, err := orders.Col("recipe_id").Int()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var recommendItems []string
@@ -213,7 +217,7 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 			Filter(dataframe.F{Colname: "RecipeID", Comparator: series.Eq, Comparando: r}).
 			Col("SimilarTo").
 			String()
-		recommendItems = append(recommendItems, strings.Split(match, " ")[:3]...)
+		recommendItems = append(recommendItems, strings.Split(strings.Trim(match, "[ ]"), " ")[:3]...)
 	}
 
 	//set maximum recommended recipes
@@ -221,15 +225,25 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 		recommendItems = recommendItems[:nbRecipes]
 	}
 
-	//get recipes names
-	filters = []dataframe.F{}
-	for _, i := range recommendItems {
-		filters = append(filters, dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: i})
-	}
-	recommendItemsName := recipes.FilterAggregation(dataframe.Or, filters...).Col("title").Records()
-	for i, n := range recommendItemsName {
-		log.Printf("%d/%d Recommend for user(%d) = [%s] %v\n", i+1, nbRecipes, userID, recommendItems[i], n)
-	}
+	//fill in table with scores and recommended items
+	lines := make([][]string, 0)
+	lines = append(lines, []string{
+		fmt.Sprint("Content Filtering"), //model
+		fmt.Sprintf("%.5f", 0.0),        //precision@nbRecipes
+		fmt.Sprintf("%.5f", 0.0),        //recall@NbRecipes
+		fmt.Sprintf("%.5f", 0.0),        //rmse@nbRecipes
+		fmt.Sprintf("%.5f", 0.0),        //mae@NbRecipes
+		fmt.Sprintf("%v", recommendItems),
+	})
 
-	return nil
+	//print table
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
+		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("MAE@%d", nbRecipes), "Recommendation"})
+	for _, v := range lines {
+		table.Append(v)
+	}
+	table.Render()
+
+	return recommendItems, nil
 }
