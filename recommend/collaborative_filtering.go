@@ -44,15 +44,15 @@ func usersCloseByXKm(usersID int, km float64, users dataframe.DataFrame) datafra
 var models = []core.ModelInterface{
 	//BaseLine
 	model.NewBaseLine(base.Params{
-		base.NEpochs: 1000,
+		base.NEpochs: 10,
 	}),
 	// SlopOne
 	model.NewSlopOne(nil),
 	// CoClustering
 	model.NewCoClustering(base.Params{
 		base.NUserClusters: 5,
-		base.NItemClusters: 3,
-		base.NEpochs:       1000,
+		base.NItemClusters: 5,
+		base.NEpochs:       10,
 	}),
 	// KNN
 	model.NewKNN(base.Params{
@@ -64,7 +64,7 @@ var models = []core.ModelInterface{
 	}),
 	// SVD
 	model.NewSVD(base.Params{
-		base.NEpochs:    1000,
+		base.NEpochs:    10,
 		base.Reg:        0.1,
 		base.Lr:         0.01,
 		base.NFactors:   50,
@@ -73,7 +73,7 @@ var models = []core.ModelInterface{
 	}),
 	//SVD++
 	model.NewSVDpp(base.Params{
-		base.NEpochs:    1000,
+		base.NEpochs:    10,
 		base.Reg:        0.05,
 		base.Lr:         0.005,
 		base.NFactors:   50,
@@ -89,7 +89,7 @@ var models = []core.ModelInterface{
 		base.NFactors:   10,
 		base.Reg:        0.01,
 		base.Lr:         0.05,
-		base.NEpochs:    1000,
+		base.NEpochs:    10,
 		base.InitMean:   0,
 		base.InitStdDev: 0.001,
 	}),
@@ -98,7 +98,7 @@ var models = []core.ModelInterface{
 		base.NFactors: 20,
 		base.Reg:      0.015,
 		base.Alpha:    1.0,
-		base.NEpochs:  1000,
+		base.NEpochs:  10,
 	}),
 }
 
@@ -128,7 +128,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 		m.Fit(train, nil)
 		//evaluate model
 		scoresRanking := core.EvaluateRank(m, test, train, nbRecipes, core.Precision, core.Recall)
-		scoresRating := core.EvaluateRating(m, test, core.RMSE, core.MAE)
+		scoresRating := core.EvaluateRating(m, test, core.RMSE)
 		//generate recommendations for user
 		//get all items in the full dataset
 		items := core.Items(data)
@@ -142,7 +142,6 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 			fmt.Sprintf("%.5f", scoresRanking[0]), //precision@nbRecipes
 			fmt.Sprintf("%.5f", scoresRanking[1]), //recall@NbRecipes
 			fmt.Sprintf("%.5f", scoresRating[0]),  //rmse@nbRecipes
-			fmt.Sprintf("%.5f", scoresRating[1]),  //mae@NbRecipes
 			fmt.Sprintf("%v", recommendItems),
 		})
 	}
@@ -150,7 +149,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("MAE@%d", nbRecipes), "Recommendation"})
+		fmt.Sprintf("RMSE@%d", nbRecipes), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}
@@ -158,7 +157,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 
 	recommendItems := make(map[string][]string, len(lines))
 	for _, l := range lines {
-		recommendItems[l[0]] = strings.Split(strings.Trim(l[5], "[ ]"), " ")
+		recommendItems[l[0]] = strings.Split(strings.Trim(l[4], "[ ]"), " ")
 	}
 
 	return recommendItems, nil

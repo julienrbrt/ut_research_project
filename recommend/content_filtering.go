@@ -232,14 +232,13 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 		fmt.Sprintf("%.5f", 0.0),        //precision@nbRecipes
 		fmt.Sprintf("%.5f", 0.0),        //recall@NbRecipes
 		fmt.Sprintf("%.5f", 0.0),        //rmse@nbRecipes
-		fmt.Sprintf("%.5f", 0.0),        //mae@NbRecipes
 		fmt.Sprintf("%v", recommendItems),
 	})
 
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("MAE@%d", nbRecipes), "Recommendation"})
+		fmt.Sprintf("RMSE@%d", nbRecipes), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}
