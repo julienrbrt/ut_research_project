@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"runtime"
 	"strconv"
 
 	"github.com/go-gota/gota/dataframe"
@@ -46,20 +47,12 @@ var models = []core.ModelInterface{
 	}),
 	//BRP
 	model.NewBPR(base.Params{
-		base.NFactors:   10,
-		base.Reg:        0.01,
-		base.Lr:         0.05,
-		base.NEpochs:    10,
+		base.NFactors:   50,
+		base.Reg:        0.005,
+		base.Lr:         0.01,
+		base.NEpochs:    50,
 		base.InitMean:   0,
 		base.InitStdDev: 0.001,
-	}),
-	//NMF
-	model.NewNMF(base.Params{
-		base.Reg:      0.06,
-		base.NFactors: 15,
-		base.NEpochs:  50,
-		base.InitLow:  0,
-		base.InitHigh: 1,
 	}),
 }
 
@@ -115,4 +108,101 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	table.Render()
 
 	return nil
+}
+
+//BestHyperParametersKNN test best fitting parameters of the KNN model
+func BestHyperParametersKNN(nbRecipes int, orders dataframe.DataFrame) {
+	//load dataset
+	data := core.NewDataSet(orders.Col("user_id").Records(), orders.Col("recipe_id").Records(), orders.Col("rating").Float())
+
+	cv := core.GridSearchCV(model.NewKNN(nil), data, core.ParameterGrid{
+		base.Lr:         {0.005, 0.05, 0.1},
+		base.Reg:        {0.005, 0.02, 0.5},
+		base.NEpochs:    {50},
+		base.Type:       {base.Baseline},
+		base.Similarity: {base.Cosine, base.MSD},
+		base.K:          {10, 40, 80},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
+	fmt.Println("=== Precision@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[0].BestParams)
+	fmt.Println("=== Recall@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[1].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[1].BestParams)
+	fmt.Println("=== RMSE@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[2].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[2].BestParams)
+}
+
+//BestHyperParametersBaseLine test best fitting parameters of the BaseLine model
+func BestHyperParametersBaseLine(nbRecipes int, orders dataframe.DataFrame) {
+	//load dataset
+	data := core.NewDataSet(orders.Col("user_id").Records(), orders.Col("recipe_id").Records(), orders.Col("rating").Float())
+
+	cv := core.GridSearchCV(model.NewKNN(nil), data, core.ParameterGrid{
+		base.Lr:      {0.005, 0.05, 0.1},
+		base.Reg:     {0.005, 0.02, 0.5},
+		base.NEpochs: {50},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
+	fmt.Println("=== Precision@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[0].BestParams)
+	fmt.Println("=== Recall@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[1].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[1].BestParams)
+	fmt.Println("=== RMSE@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[2].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[2].BestParams)
+}
+
+//BestHyperParametersBPR test best fitting parameters of the BPR model
+func BestHyperParametersBPR(nbRecipes int, orders dataframe.DataFrame) {
+	//load dataset
+	data := core.NewDataSet(orders.Col("user_id").Records(), orders.Col("recipe_id").Records(), orders.Col("rating").Float())
+
+	cv := core.GridSearchCV(model.NewBPR(nil), data, core.ParameterGrid{
+		base.NFactors:   {5, 10, 50},
+		base.Reg:        {0.005, 0.01, 0.5},
+		base.Lr:         {0.01, 0.05, 0.1},
+		base.NEpochs:    {50},
+		base.InitMean:   {0},
+		base.InitStdDev: {0.001},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
+	fmt.Println("=== Precision@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[0].BestParams)
+	fmt.Println("=== Recall@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[1].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[1].BestParams)
+	fmt.Println("=== RMSE@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[2].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[2].BestParams)
+}
+
+//BestHyperParametersSVD test best fitting parameters of the SVD model
+func BestHyperParametersSVD(nbRecipes int, orders dataframe.DataFrame) {
+	//load dataset
+	data := core.NewDataSet(orders.Col("user_id").Records(), orders.Col("recipe_id").Records(), orders.Col("rating").Float())
+
+	cv := core.GridSearchCV(model.NewSVD(nil), data, core.ParameterGrid{
+		base.NFactors:   {5, 10, 50, 100},
+		base.Reg:        {0.005, 0.2, 0.5},
+		base.Lr:         {0.005, 0.05, 0.1},
+		base.NEpochs:    {50},
+		base.InitMean:   {0},
+		base.InitStdDev: {0.001, 0.1},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
+	fmt.Println("=== Precision@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[0].BestParams)
+	fmt.Println("=== Recall@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[1].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[1].BestParams)
+	fmt.Println("=== RMSE@nbRecipes")
+	fmt.Printf("The best score is: %.5f\n", cv[2].BestScore)
+	fmt.Printf("The best params is: %v\n", cv[2].BestParams)
 }
