@@ -158,7 +158,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (dataframe.DataFrame, e
 
 //WithContentFiltering recommends recipes using content filtering
 //returns the recommended recipes_id
-func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) ([]string, error) {
+func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) error {
 	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
 
 	//user profile
@@ -208,7 +208,7 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	//select recipes to recommend
 	recipesIDs, err := orders.Col("recipe_id").Int()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var recommendItems []string
@@ -244,5 +244,5 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	}
 	table.Render()
 
-	return recommendItems, nil
+	return nil
 }
