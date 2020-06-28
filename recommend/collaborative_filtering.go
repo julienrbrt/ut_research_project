@@ -28,7 +28,7 @@ var models = []core.ModelInterface{
 	model.NewCoClustering(base.Params{
 		base.NEpochs:       150,
 		base.NUserClusters: 10,
-		base.NItemClusters: 25,
+		base.NItemClusters: 10,
 	}),
 	// KNN
 	model.NewKNN(base.Params{
@@ -98,7 +98,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 			fmt.Sprintf("%.5f", scoresRanking[0]), //precision@nbRecipes
 			fmt.Sprintf("%.5f", scoresRanking[1]), //recall@NbRecipes
 			fmt.Sprintf("%.5f", scoresRating[0]),  //rmse@nbRecipes
-			fmt.Sprintf("%.5f", sellability),      //sellability@neighborsUsers.Nrow()
+			fmt.Sprintf("%.5f", sellability),      //sellability@km
 			fmt.Sprintf("%v", recommendItems),
 		})
 	}
@@ -106,7 +106,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("Sellability@%d", neighborsUsers.Nrow()), "Recommendation"})
+		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("Sellability@%.5f", km), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}

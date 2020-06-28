@@ -75,7 +75,7 @@ func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommen
 		//get item profile of neighbors recommendation
 		neighborsRecommendationsProfile := make([][]float64, len(recommendItems))
 		for i, r := range recommendItems {
-			neighborsRecommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[0][1:])
+			neighborsRecommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[1][1:])
 			if err != nil {
 				continue
 			}
@@ -108,7 +108,7 @@ func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommen
 }
 
 //MeasureContentSellability measures the sellability using the cosine similarity of target users recommendation to neighboring users recommendation
-func MeasureContentSellability(userID, nbRecipes int, km float64, recommendations []string, users, orders, recipes dataframe.DataFrame) float64 {
+func MeasureContentSellability(userID, nbRecipes, nbTags int, km float64, recommendations []float64, users, orders, recipes dataframe.DataFrame) float64 {
 	if users.Nrow() == 0 {
 		return 1
 	}
@@ -136,7 +136,7 @@ func MeasureContentSellability(userID, nbRecipes int, km float64, recommendation
 	sellability := 0.0
 	for _, id := range users.Col("id").Records() {
 		sid, _ := strconv.Atoi(id)
-		recommendItems, err := recommendedContentFiltering(sid, nbRecipes, km, users, orders, recipes)
+		recommendItems, err := recommendedContentFiltering(sid, nbRecipes, nbTags, km, users, orders, recipes)
 		if err != nil {
 			continue
 		}

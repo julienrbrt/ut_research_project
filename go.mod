@@ -8,7 +8,7 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/zhenghaoz/gorse v0.1.3
-	gonum.org/v1/gonum v0.7.0 // indirect
+	gonum.org/v1/gonum v0.7.0
 )
 
 replace github.com/go-gota/gota => github.com/julienrbrt/gota v0.10.2-0.20200610192205-acee716f300d
