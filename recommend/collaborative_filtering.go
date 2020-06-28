@@ -32,7 +32,7 @@ var models = []core.ModelInterface{
 	}),
 	// SVD
 	model.NewSVD(base.Params{
-		base.NEpochs:    150,
+		base.NEpochs:    500,
 		base.Reg:        0.005,
 		base.Lr:         0.005,
 		base.NFactors:   10,
@@ -57,7 +57,6 @@ var models = []core.ModelInterface{
 		base.K:          80,
 		base.Lr:         0.005,
 		base.Reg:        0.02,
-		base.Shrinkage:  90,
 	}),
 }
 
