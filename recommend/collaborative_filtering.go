@@ -30,17 +30,6 @@ var models = []core.ModelInterface{
 		base.NUserClusters: 10,
 		base.NItemClusters: 10,
 	}),
-	// KNN
-	model.NewKNN(base.Params{
-		base.NEpochs:    150,
-		base.Type:       base.Baseline,
-		base.UserBased:  true,
-		base.Similarity: base.MSD,
-		base.K:          80,
-		base.Lr:         0.005,
-		base.Reg:        0.02,
-		base.Shrinkage:  90,
-	}),
 	// SVD
 	model.NewSVD(base.Params{
 		base.NEpochs:    150,
@@ -59,14 +48,22 @@ var models = []core.ModelInterface{
 		base.InitMean:   0,
 		base.InitStdDev: 0.001,
 	}),
+	// KNN
+	model.NewKNN(base.Params{
+		base.NEpochs:    150,
+		base.Type:       base.Baseline,
+		base.UserBased:  true,
+		base.Similarity: base.MSD,
+		base.K:          80,
+		base.Lr:         0.005,
+		base.Reg:        0.02,
+		base.Shrinkage:  90,
+	}),
 }
 
 //WithCollaborativeFiltering recommends recipes using collaborative filtering
-func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) error {
+func WithCollaborativeFiltering(userID, nbRecipes int, neighborsUsers, orders, recipes dataframe.DataFrame) error {
 	log.Printf("(Collaborative Filtering) Recommending Recipes for user %d", userID)
-
-	//keep only neighboring users
-	neighborsUsers := usersCloseByXKm(userID, km, users)
 
 	//load dataset
 	data := core.NewDataSet(orders.Col("user_id").Records(), orders.Col("recipe_id").Records(), orders.Col("rating").Float())
@@ -90,7 +87,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 		recommendItems, _ := core.Top(items, strconv.Itoa(userID), nbRecipes, excludeItems, m)
 
 		//calculate sellability
-		sellability := MeasureCollaborativeSellability(userID, nbRecipes, km, recommendItems, m, data, train, test, neighborsUsers, recipes)
+		sellability := MeasureCollaborativeSellability(userID, nbRecipes, recommendItems, m, data, train, test, neighborsUsers, recipes)
 
 		//fill in table with scores and recommended items
 		lines = append(lines, []string{
@@ -106,7 +103,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("Sellability@%.5f", km), "Recommendation"})
+		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("Sellability@%d", neighborsUsers.Nrow()), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}

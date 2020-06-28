@@ -11,8 +11,8 @@ import (
 	"github.com/zhenghaoz/gorse/core"
 )
 
-//usersCloseByXKm returns a dataframe containings users around user with userID from x kms
-func usersCloseByXKm(userID int, km float64, users dataframe.DataFrame) dataframe.DataFrame {
+//UsersCloseByXKm returns a dataframe containings users around user with userID from x km
+func UsersCloseByXKm(userID int, km float64, users dataframe.DataFrame) dataframe.DataFrame {
 	//get user
 	user := users.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: userID})
 	if user.Nrow() == 0 {
@@ -25,6 +25,7 @@ func usersCloseByXKm(userID int, km float64, users dataframe.DataFrame) datafram
 	matchingUsers := users.
 		FilterAggregation(
 			dataframe.And,
+			dataframe.F{Colname: "id", Comparator: series.Neq, Comparando: userID}, // do not include same user
 			dataframe.F{Colname: "latitude", Comparator: series.GreaterEq, Comparando: boundingCoordinates[0].Latitude},
 			dataframe.F{Colname: "longitude", Comparator: series.GreaterEq, Comparando: boundingCoordinates[0].Longitude},
 			dataframe.F{Colname: "latitude", Comparator: series.LessEq, Comparando: boundingCoordinates[1].Latitude},
@@ -35,7 +36,7 @@ func usersCloseByXKm(userID int, km float64, users dataframe.DataFrame) datafram
 }
 
 //MeasureCollaborativeSellability measures the sellability using the cosine similarity of target users recommendation to neighboring users recommendation
-func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommendations []string, m core.ModelInterface, data *core.DataSet, train, test core.DataSetInterface, users, recipes dataframe.DataFrame) float64 {
+func MeasureCollaborativeSellability(userID, nbRecipes int, recommendations []string, m core.ModelInterface, data *core.DataSet, train, test core.DataSetInterface, users, recipes dataframe.DataFrame) float64 {
 	if users.Nrow() == 0 {
 		return 1
 	}
@@ -108,7 +109,7 @@ func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommen
 }
 
 //MeasureContentSellability measures the sellability using the cosine similarity of target users recommendation to neighboring users recommendation
-func MeasureContentSellability(userID, nbRecipes, nbTags int, km float64, recommendations []float64, users, orders, recipes dataframe.DataFrame) float64 {
+func MeasureContentSellability(userID, nbRecipes, nbTags int, recommendations []int, users, orders, recipes dataframe.DataFrame) float64 {
 	if users.Nrow() == 0 {
 		return 1
 	}
@@ -136,7 +137,7 @@ func MeasureContentSellability(userID, nbRecipes, nbTags int, km float64, recomm
 	sellability := 0.0
 	for _, id := range users.Col("id").Records() {
 		sid, _ := strconv.Atoi(id)
-		recommendItems, err := recommendedContentFiltering(sid, nbRecipes, nbTags, km, users, orders, recipes)
+		recommendItems, err := recommendedContentFiltering(sid, nbRecipes, nbTags, orders, recipes)
 		if err != nil {
 			continue
 		}

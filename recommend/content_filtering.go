@@ -11,6 +11,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/julienrbrt/ut_research_project/util"
+	"github.com/mkmik/argsort"
 	"github.com/olekukonko/tablewriter"
 	"gonum.org/v1/gonum/mat"
 )
@@ -133,7 +134,7 @@ func recipeSimilarityMatrix(recipes dataframe.DataFrame) (*mat.Dense, error) {
 	return matrix, nil
 }
 
-func recommendedContentFiltering(userID, nbRecipes, nbTags int, km float64, users, orders, recipes dataframe.DataFrame) ([]float64, error) {
+func recommendedContentFiltering(userID, nbRecipes, nbTags int, orders, recipes dataframe.DataFrame) ([]int, error) {
 	//user profile
 	orders = userProfileOrder(userID, orders, recipes)
 	log.Printf("User %d has made %d orders with a (normalized) average rating of %.2f per order\n", userID, orders.Nrow(), orders.Col("rating").Mean())
@@ -185,15 +186,16 @@ func recommendedContentFiltering(userID, nbRecipes, nbTags int, km float64, user
 	// }
 	sim := matrix{util.LoadCSV("data/recipes_matrix.csv")}
 
-	var recommendItems []float64
+	var recommendItems []int
 	for _, r := range ids {
 		//r-1 because id starts at 1 but matrix at 0
 		bestMatch := mat.Row(nil, r-1, sim)
-		sort.Slice(bestMatch, func(i, j int) bool {
+
+		bestIndex := argsort.SortSlice(bestMatch, func(i, j int) bool {
 			return bestMatch[i] > bestMatch[j]
 		})
 
-		recommendItems = append(recommendItems, bestMatch[:nbTags]...)
+		recommendItems = append(recommendItems, bestIndex[1:nbTags]...)
 	}
 
 	//set maximum recommended recipes
@@ -206,20 +208,17 @@ func recommendedContentFiltering(userID, nbRecipes, nbTags int, km float64, user
 
 //WithContentFiltering recommends recipes using content filtering
 //returns the recommended recipes_id
-func WithContentFiltering(userID, nbRecipes, nbTags int, km float64, users, orders, recipes dataframe.DataFrame) error {
+func WithContentFiltering(userID, nbRecipes, nbTags int, neighborsUsers, orders, recipes dataframe.DataFrame) error {
 	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
 
-	//keep only neighboring users
-	neighborsUsers := usersCloseByXKm(userID, km, users)
-
 	//calculate recommended recipes
-	recommendItems, err := recommendedContentFiltering(userID, nbRecipes, nbTags, km, users, orders, recipes)
+	recommendItems, err := recommendedContentFiltering(userID, nbRecipes, nbTags, orders, recipes)
 	if err != nil {
 		return err
 	}
 
 	//calculate sellability
-	sellability := MeasureContentSellability(userID, nbRecipes, nbTags, km, recommendItems, neighborsUsers, orders, recipes)
+	sellability := MeasureContentSellability(userID, nbRecipes, nbTags, recommendItems, neighborsUsers, orders, recipes)
 
 	//fill in table with scores and recommended items
 	lines := make([][]string, 0)
@@ -234,7 +233,7 @@ func WithContentFiltering(userID, nbRecipes, nbTags int, km float64, users, orde
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("Sellability@%.5f", km), "Recommendation"})
+		fmt.Sprintf("Sellability@%d", neighborsUsers.Nrow()), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}

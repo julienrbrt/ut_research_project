@@ -46,14 +46,18 @@ func main() {
 	orders := util.LoadCSV("data/orders.csv")
 	recipes := util.LoadCSV("data/recipes.csv")
 
+	//keep only neighboring users
+	neighborsUsers := recommend.UsersCloseByXKm(userID, maxDistance, users)
+	fmt.Printf("There is %d neighboring users from user %d in a %.0f km radius\n", neighborsUsers.Nrow(), userID, maxDistance)
+
 	//content filtering
-	err = recommend.WithContentFiltering(userID, nbRecipes, 3, maxDistance, users, orders, recipes)
+	err = recommend.WithContentFiltering(userID, nbRecipes, 3, neighborsUsers, orders, recipes)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	//collaborative filtering
-	err = recommend.WithCollaborativeFiltering(userID, nbRecipes, maxDistance, users, orders, recipes)
+	err = recommend.WithCollaborativeFiltering(userID, nbRecipes, neighborsUsers, orders, recipes)
 	if err != nil {
 		log.Fatalln(err)
 	}
