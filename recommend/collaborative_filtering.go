@@ -18,39 +18,44 @@ import (
 var models = []core.ModelInterface{
 	//BaseLine
 	model.NewBaseLine(base.Params{
-		base.NEpochs: 10,
+		base.NEpochs: 150,
+		base.Lr:      0.1,
+		base.Reg:     0.5,
 	}),
 	// SlopOne
 	model.NewSlopOne(nil),
 	// CoClustering
 	model.NewCoClustering(base.Params{
-		base.NUserClusters: 5,
-		base.NItemClusters: 5,
-		base.NEpochs:       10,
+		base.NEpochs:       150,
+		base.NUserClusters: 10,
+		base.NItemClusters: 25,
 	}),
 	// KNN
 	model.NewKNN(base.Params{
+		base.NEpochs:    150,
 		base.Type:       base.Baseline,
-		base.UserBased:  false,
-		base.Similarity: base.Pearson,
-		base.K:          30,
+		base.UserBased:  true,
+		base.Similarity: base.MSD,
+		base.K:          80,
+		base.Lr:         0.005,
+		base.Reg:        0.02,
 		base.Shrinkage:  90,
 	}),
 	// SVD
 	model.NewSVD(base.Params{
-		base.NEpochs:    10,
-		base.Reg:        0.1,
-		base.Lr:         0.01,
-		base.NFactors:   50,
+		base.NEpochs:    150,
+		base.Reg:        0.005,
+		base.Lr:         0.005,
+		base.NFactors:   10,
 		base.InitMean:   0,
-		base.InitStdDev: 0.001,
+		base.InitStdDev: 0.01,
 	}),
 	//BRP
 	model.NewBPR(base.Params{
+		base.NEpochs:    150,
 		base.NFactors:   50,
 		base.Reg:        0.005,
 		base.Lr:         0.01,
-		base.NEpochs:    50,
 		base.InitMean:   0,
 		base.InitStdDev: 0.001,
 	}),
@@ -85,7 +90,7 @@ func WithCollaborativeFiltering(userID, nbRecipes int, km float64, users, orders
 		recommendItems, _ := core.Top(items, strconv.Itoa(userID), nbRecipes, excludeItems, m)
 
 		//calculate sellability
-		sellability := MeasureCollaborativeSellability(userID, nbRecipes, km, recommendItems, m, data, train, test, neighborsUsers)
+		sellability := MeasureCollaborativeSellability(userID, nbRecipes, km, recommendItems, m, data, train, test, neighborsUsers, recipes)
 
 		//fill in table with scores and recommended items
 		lines = append(lines, []string{
@@ -122,7 +127,7 @@ func BestHyperParametersKNN(nbRecipes int, orders dataframe.DataFrame) {
 		base.Type:       {base.Baseline},
 		base.Similarity: {base.Cosine, base.MSD},
 		base.K:          {10, 40, 80},
-	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{Verbose: false, FitJobs: 1, CVJobs: runtime.NumCPU()},
 		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
 	fmt.Println("=== Precision@nbRecipes")
 	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
@@ -144,7 +149,7 @@ func BestHyperParametersBaseLine(nbRecipes int, orders dataframe.DataFrame) {
 		base.Lr:      {0.005, 0.05, 0.1},
 		base.Reg:     {0.005, 0.02, 0.5},
 		base.NEpochs: {50},
-	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{Verbose: false, FitJobs: 1, CVJobs: runtime.NumCPU()},
 		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
 	fmt.Println("=== Precision@nbRecipes")
 	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
@@ -169,7 +174,7 @@ func BestHyperParametersBPR(nbRecipes int, orders dataframe.DataFrame) {
 		base.NEpochs:    {50},
 		base.InitMean:   {0},
 		base.InitStdDev: {0.001},
-	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{Verbose: false, FitJobs: 1, CVJobs: runtime.NumCPU()},
 		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
 	fmt.Println("=== Precision@nbRecipes")
 	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)
@@ -194,7 +199,7 @@ func BestHyperParametersSVD(nbRecipes int, orders dataframe.DataFrame) {
 		base.NEpochs:    {50},
 		base.InitMean:   {0},
 		base.InitStdDev: {0.001, 0.1},
-	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{false, 1, runtime.NumCPU()},
+	}, core.NewKFoldSplitter(5), 0, &base.RuntimeOptions{Verbose: false, FitJobs: 1, CVJobs: runtime.NumCPU()},
 		core.NewRankEvaluator(nbRecipes, core.Precision, core.Recall), core.NewRatingEvaluator(core.RMSE))
 	fmt.Println("=== Precision@nbRecipes")
 	fmt.Printf("The best score is: %.5f\n", cv[0].BestScore)

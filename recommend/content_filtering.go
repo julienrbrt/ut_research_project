@@ -156,11 +156,7 @@ func recipeCosineSimilarity(recipes dataframe.DataFrame) (dataframe.DataFrame, e
 	return dataframe.LoadStructs(similarities), nil
 }
 
-//WithContentFiltering recommends recipes using content filtering
-//returns the recommended recipes_id
-func WithContentFiltering(userID, nbRecipes int, users, orders, recipes dataframe.DataFrame) error {
-	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
-
+func recommendedContentFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) ([]string, error) {
 	//user profile
 	orders = userProfileOrder(userID, orders, recipes)
 	log.Printf("User %d has made %d orders with a (normalized) average rating of %.2f per order\n", userID, orders.Nrow(), orders.Col("rating").Mean())
@@ -208,7 +204,7 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 	//select recipes to recommend
 	recipesIDs, err := orders.Col("recipe_id").Int()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var recommendItems []string
@@ -225,20 +221,41 @@ func WithContentFiltering(userID, nbRecipes int, users, orders, recipes datafram
 		recommendItems = recommendItems[:nbRecipes]
 	}
 
+	return recommendItems, nil
+}
+
+//WithContentFiltering recommends recipes using content filtering
+//returns the recommended recipes_id
+func WithContentFiltering(userID, nbRecipes int, km float64, users, orders, recipes dataframe.DataFrame) error {
+	log.Printf("(Content Filtering) Recommending Recipes for user %d", userID)
+
+	//keep only neighboring users
+	neighborsUsers := usersCloseByXKm(userID, km, users)
+
+	//calculate recommended recipes
+	recommendItems, err := recommendedContentFiltering(userID, nbRecipes, km, users, orders, recipes)
+	if err != nil {
+		return err
+	}
+
+	//calculate sellability
+	sellability := MeasureContentSellability(userID, nbRecipes, km, recommendItems, neighborsUsers, orders, recipes)
+
 	//fill in table with scores and recommended items
 	lines := make([][]string, 0)
 	lines = append(lines, []string{
-		fmt.Sprint("Content Filtering"), //model
-		fmt.Sprintf("%.5f", 0.0),        //precision@nbRecipes
-		fmt.Sprintf("%.5f", 0.0),        //recall@NbRecipes
-		fmt.Sprintf("%.5f", 0.0),        //rmse@nbRecipes
+		fmt.Sprint("Content Filtering"),  //model
+		fmt.Sprintf("%.5f", 0.0),         //precision@nbRecipes
+		fmt.Sprintf("%.5f", 0.0),         //recall@NbRecipes
+		fmt.Sprintf("%.5f", 0.0),         //rmse@nbRecipes
+		fmt.Sprintf("%.5f", sellability), //sellability@neighborsUsers.Nrow()
 		fmt.Sprintf("%v", recommendItems),
 	})
 
 	//print table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Model", fmt.Sprintf("Precision@%d", nbRecipes), fmt.Sprintf("Recall@%d", nbRecipes),
-		fmt.Sprintf("RMSE@%d", nbRecipes), "Recommendation"})
+		fmt.Sprintf("RMSE@%d", nbRecipes), fmt.Sprintf("Sellability@%d", neighborsUsers.Nrow()), "Recommendation"})
 	for _, v := range lines {
 		table.Append(v)
 	}

@@ -1,8 +1,9 @@
 package recommend
 
 import (
-	"log"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -34,16 +35,28 @@ func usersCloseByXKm(userID int, km float64, users dataframe.DataFrame) datafram
 }
 
 //MeasureCollaborativeSellability measures the sellability using the cosine similarity of target users recommendation to neighboring users recommendation
-func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommendations []string, m core.ModelInterface, data *core.DataSet, train, test core.DataSetInterface, users dataframe.DataFrame) float64 {
+func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommendations []string, m core.ModelInterface, data *core.DataSet, train, test core.DataSetInterface, users, recipes dataframe.DataFrame) float64 {
 	if users.Nrow() == 0 {
 		return 1
 	}
 
-	//convert recommendation to []float64
-	recommendationsFloat := make([]float64, len(recommendations))
+	//keep only relevant recipes columns
+	var columnsToDrop []string
+	for _, n := range recipes.Names() {
+		//keep only orders columns and recipes tags
+		if n != "id" && !strings.Contains(n, "tag_") && !strings.Contains(n, "ingredient_") {
+			columnsToDrop = append(columnsToDrop, n)
+		}
+	}
+	recipes = recipes.Drop(columnsToDrop)
+
+	//get item profile of recommendation
+	var err error
+	recommendationsProfile := make([][]float64, len(recommendations))
 	for i, r := range recommendations {
-		if n, err := strconv.ParseFloat(r, 64); err == nil {
-			recommendationsFloat[i] = n
+		recommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[1][1:])
+		if err != nil {
+			continue
 		}
 	}
 
@@ -59,32 +72,106 @@ func MeasureCollaborativeSellability(userID, nbRecipes int, km float64, recommen
 		//get top recommended items (excluding rated items)
 		recommendItems, _ := core.Top(items, id, nbRecipes, excludeItems, m)
 
-		//convert recommendItems to []float64
-		recommendItemsFloat := make([]float64, len(recommendItems))
+		//get item profile of neighbors recommendation
+		neighborsRecommendationsProfile := make([][]float64, len(recommendItems))
 		for i, r := range recommendItems {
-			if n, err := strconv.ParseFloat(r, 64); err == nil {
-				recommendItemsFloat[i] = n
+			neighborsRecommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[0][1:])
+			if err != nil {
+				continue
 			}
 		}
 
-		sim, err := util.CosineSimilarity(recommendationsFloat, recommendItemsFloat)
-		if err != nil {
-			continue
+		//keep max cosine similarity of a recipe
+		var sim, newSim, meanSim float64
+		for i := range recommendationsProfile {
+			for j := range neighborsRecommendationsProfile {
+				newSim, err = util.CosineSimilarity(recommendationsProfile[i], neighborsRecommendationsProfile[j])
+				if err != nil {
+					continue
+				}
+
+				if newSim > sim {
+					sim = newSim
+				}
+			}
+
+			meanSim = +sim
 		}
 
-		sellability = sellability + sim
+		sellability = sellability + (meanSim / float64(len(recommendationsProfile)))
 	}
 
 	//mean cosine similarity of all users
 	sellability = sellability / float64(users.Nrow())
 
-	log.Println(sellability)
-
 	return sellability
 }
 
 //MeasureContentSellability measures the sellability using the cosine similarity of target users recommendation to neighboring users recommendation
-func MeasureContentSellability(userID int, km float64, recommendations []string) float64 {
+func MeasureContentSellability(userID, nbRecipes int, km float64, recommendations []string, users, orders, recipes dataframe.DataFrame) float64 {
+	if users.Nrow() == 0 {
+		return 1
+	}
 
-	return 0
+	//keep only relevant recipes columns
+	var columnsToDrop []string
+	for _, n := range recipes.Names() {
+		//keep only orders columns and recipes tags
+		if n != "id" && !strings.Contains(n, "tag_") && !strings.Contains(n, "ingredient_") {
+			columnsToDrop = append(columnsToDrop, n)
+		}
+	}
+	recipes = recipes.Drop(columnsToDrop)
+
+	//get item profile of recommendation
+	var err error
+	recommendationsProfile := make([][]float64, len(recommendations))
+	for i, r := range recommendations {
+		recommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[1][1:])
+		if err != nil {
+			continue
+		}
+	}
+
+	sellability := 0.0
+	for _, id := range users.Col("id").Records() {
+		sid, _ := strconv.Atoi(id)
+		recommendItems, err := recommendedContentFiltering(sid, nbRecipes, km, users, orders, recipes)
+		if err != nil {
+			continue
+		}
+
+		//get item profile of neighbors recommendation
+		neighborsRecommendationsProfile := make([][]float64, len(recommendItems))
+		for i, r := range recommendItems {
+			neighborsRecommendationsProfile[i], err = util.SS2SF(recipes.Filter(dataframe.F{Colname: "id", Comparator: series.Eq, Comparando: r}).Records()[1][1:])
+			if err != nil {
+				continue
+			}
+		}
+
+		//keep max cosine similarity of a recipe
+		var sim, newSim, meanSim float64
+		for i := range recommendationsProfile {
+			for j := range neighborsRecommendationsProfile {
+				newSim, err = util.CosineSimilarity(recommendationsProfile[i], neighborsRecommendationsProfile[j])
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+
+				if newSim > sim {
+					sim = newSim
+				}
+			}
+
+			meanSim = +sim
+		}
+
+		sellability = sellability + (meanSim / float64(len(recommendationsProfile)))
+	}
+
+	//mean cosine similarity of all users
+	sellability = sellability / float64(users.Nrow())
+	return sellability
 }
